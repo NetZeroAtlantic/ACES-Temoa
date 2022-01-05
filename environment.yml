@@ -1,4 +1,4 @@
-name: temoa-py3
+name: ACES
 channels:
     - defaults
     - conda-forge
