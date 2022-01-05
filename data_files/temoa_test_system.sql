@@ -304,6 +304,16 @@ CREATE TABLE "Output_Emissions" (
 	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
 	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods")
 );
+CREATE TABLE "Output_ImplicitEmissionsPrice" (
+	"regions"	text,
+	"scenario"	text,
+	"t_periods"	integer,
+	"emissions_comm"	text,
+	"emissions_price"	real,
+	PRIMARY KEY("regions","scenario","t_periods","emissions_comm"),
+	FOREIGN KEY("emissions_comm") REFERENCES "EmissionActivity"("emis_comm"),
+	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods")
+);
 CREATE TABLE "Output_Curtailment" (
 	"regions"	text,
 	"scenario"	text,
@@ -358,7 +368,7 @@ CREATE TABLE "Output_CapacityByPeriodAndTech" (
 );
 CREATE TABLE "MyopicBaseyear" (
 	"year"	real
-	"notes"	text	
+	"notes"	text
 );
 CREATE TABLE "MinGenGroupWeight" (
 	"regions"	text,
@@ -871,6 +881,18 @@ INSERT INTO `CostInvest` VALUES ('R2','R_EH',2030,3.28,'$/PJ/yr','');
 INSERT INTO `CostInvest` VALUES ('R2','R_NGH',2020,6.08,'$/PJ/yr','');
 INSERT INTO `CostInvest` VALUES ('R2','R_NGH',2025,6.08,'$/PJ/yr','');
 INSERT INTO `CostInvest` VALUES ('R2','R_NGH',2030,6.08,'$/PJ/yr','');
+CREATE TABLE IF NOT EXISTS "CostEmissions" (
+	"regions"	text NOT NULL,
+	"periods"	integer NOT NULL,
+	"emis_comm"	text NOT NULL,
+	"emis_penalty"	real,
+	"emis_penalty_units"	text,
+	"emis_penalty_notes"	text,
+	PRIMARY KEY("regions","periods","emis_comm"),
+	FOREIGN KEY("regions") REFERENCES "regions"("regions"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("emis_comm") REFERENCES "commodities"("comm_name")
+);
 CREATE TABLE "CostFixed" (
 	"regions"	text NOT NULL,
 	"periods"	integer NOT NULL,
@@ -1034,7 +1056,7 @@ CREATE TABLE "MaxResource" (
 CREATE TABLE "LinkedTechs" (
 	"primary_region"	text,
 	"primary_tech"	text,
-	"emis_comm" text, 
+	"emis_comm" text,
  	"linked_tech"	text,
 	"tech_linked_notes"	text,
 	FOREIGN KEY("primary_tech") REFERENCES "technologies"("tech"),

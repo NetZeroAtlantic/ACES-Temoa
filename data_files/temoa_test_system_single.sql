@@ -94,6 +94,18 @@ CREATE TABLE IF NOT EXISTS "CapacityToActivity" (
 	PRIMARY KEY("regions","tech"),
 	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
 );
+CREATE TABLE IF NOT EXISTS "CostEmissions" (
+	"regions"	text NOT NULL,
+	"periods"	integer NOT NULL,
+	"emis_comm"	text NOT NULL,
+	"emis_penalty"	real,
+	"emis_penalty_units"	text,
+	"emis_penalty_notes"	text,
+	PRIMARY KEY("regions","periods","emis_comm"),
+	FOREIGN KEY("regions") REFERENCES "regions"("regions"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("emis_comm") REFERENCES "commodities"("comm_name")
+);
 CREATE TABLE IF NOT EXISTS "CostFixed" (
 	"regions"	text NOT NULL,
 	"periods"	integer NOT NULL,
@@ -371,6 +383,16 @@ CREATE TABLE IF NOT EXISTS "Output_Emissions" (
 	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
 	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
 	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods")
+);
+CREATE TABLE "Output_ImplicitEmissionsPrice" (
+	"regions"	text,
+	"scenario"	text,
+	"t_periods"	integer,
+	"emissions_comm"	text,
+	"emissions_price"	real,
+	PRIMARY KEY("regions","scenario","t_periods","emissions_comm"),
+	FOREIGN KEY("emissions_comm") REFERENCES "EmissionActivity"("emis_comm"),
+	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods")
 );
 CREATE TABLE IF NOT EXISTS "Output_VFlow_In" (
 	"regions"	text,

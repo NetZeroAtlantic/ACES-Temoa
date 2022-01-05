@@ -283,6 +283,16 @@ CREATE TABLE "Output_Emissions" (
 	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
 	PRIMARY KEY("regions","scenario","t_periods","emissions_comm","tech","vintage")
 );
+CREATE TABLE "Output_ImplicitEmissionsPrice" (
+	"regions"	text,
+	"scenario"	text,
+	"t_periods"	integer,
+	"emissions_comm"	text,
+	"emissions_price"	real,
+	PRIMARY KEY("regions","scenario","t_periods","emissions_comm"),
+	FOREIGN KEY("emissions_comm") REFERENCES "EmissionActivity"("emis_comm"),
+	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods")
+);
 CREATE TABLE "Output_Curtailment" (
 	"regions"	text,
 	"scenario"	text,
@@ -337,7 +347,7 @@ CREATE TABLE "Output_CapacityByPeriodAndTech" (
 );
 CREATE TABLE "MyopicBaseyear" (
 	"year"	real
-	"notes"	text	
+	"notes"	text
 );
 CREATE TABLE "MinGenGroupWeight" (
 	"regions"	text,
@@ -530,6 +540,7 @@ CREATE TABLE "EmissionLimit" (
 	FOREIGN KEY("emis_comm") REFERENCES "commodities"("comm_name"),
 	PRIMARY KEY("regions","periods","emis_comm")
 );
+INSERT INTO `EmissionLimit` VALUES ('utopia',1990,'co2',999.9,'kt','');
 CREATE TABLE "EmissionActivity" (
 	"regions"	text,
 	"emis_comm"	text,
@@ -799,6 +810,20 @@ INSERT INTO `CostInvest` VALUES ('utopia','TXE',2010,1500.0,'','');
 INSERT INTO `CostInvest` VALUES ('utopia','TXG',1990,1044.0,'','');
 INSERT INTO `CostInvest` VALUES ('utopia','TXG',2000,1044.0,'','');
 INSERT INTO `CostInvest` VALUES ('utopia','TXG',2010,1044.0,'','');
+
+CREATE TABLE IF NOT EXISTS "CostEmissions" (
+	"regions"	text NOT NULL,
+	"periods"	integer NOT NULL,
+	"emis_comm"	text NOT NULL,
+	"emis_penalty"	real,
+	"emis_penalty_units"	text,
+	"emis_penalty_notes"	text,
+	PRIMARY KEY("regions","periods","emis_comm"),
+	FOREIGN KEY("regions") REFERENCES "regions"("regions"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("emis_comm") REFERENCES "commodities"("comm_name")
+);
+
 CREATE TABLE "CostFixed" (
 	"regions"	text NOT NULL,
 	"periods"	integer NOT NULL,
