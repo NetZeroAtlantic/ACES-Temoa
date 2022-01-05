@@ -347,6 +347,20 @@ CREATE TABLE "MinActivity" (
 	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
 	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods")
 );
+CREATE TABLE IF NOT EXISTS "MinSeasonalActivity" (
+	"regions"	text,
+	"periods"	integer,
+	"season_name" text,
+	"tech"	text,
+	"minact"	real,
+	"minact_units"	text,
+	"minact_notes"	text,
+	PRIMARY KEY("regions","periods","season_name","tech"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("season_name") REFERENCES "time_season"("t_season"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+);
+
 CREATE TABLE "MaxCapacity" (
 	"regions"	text,
 	"periods"	integer,
@@ -367,6 +381,19 @@ CREATE TABLE "MaxActivity" (
 	"maxact_notes"	text,
 	PRIMARY KEY("regions","periods","tech"),
 	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+);
+CREATE TABLE IF NOT EXISTS "MaxSeasonalActivity" (
+	"regions"	text,
+	"periods"	integer,
+	"season_name" text,
+	"tech"	text,
+	"minact"	real,
+	"minact_units"	text,
+	"minact_notes"	text,
+	PRIMARY KEY("regions","periods","season_name","tech"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("season_name") REFERENCES "time_season"("t_season"),
 	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
 );
 CREATE TABLE "LifetimeTech" (
