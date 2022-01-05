@@ -304,6 +304,20 @@ CREATE TABLE "Output_Emissions" (
 	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
 	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods")
 );
+CREATE TABLE IF NOT EXISTS "Output_Employment" (
+	"regions"	text,
+	"scenario"	text,
+	"sector"	text,
+	"t_periods"	integer,
+	"tech"	text,
+	"vintage"	integer,
+	"jobs"	real,
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	PRIMARY KEY("regions","scenario","t_periods","tech","vintage"),
+	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
+	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods")
+);
 CREATE TABLE "Output_ImplicitEmissionsPrice" (
 	"regions"	text,
 	"scenario"	text,
@@ -715,6 +729,19 @@ INSERT INTO `Efficiency` VALUES ('R2','NG','R_NGH',2025,'RH',0.85,'');
 INSERT INTO `Efficiency` VALUES ('R2','NG','R_NGH',2030,'RH',0.85,'');
 INSERT INTO `Efficiency` VALUES ('R1-R2','ELC','E_TRANS',2015,'ELC',0.9,'');
 INSERT INTO `Efficiency` VALUES ('R2-R1','ELC','E_TRANS',2015,'ELC',0.9,'');
+CREATE TABLE IF NOT EXISTS "EmploymentPerCapacity" (
+	"regions"	text NOT NULL,
+	"periods"	integer NOT NULL,
+	"tech"	text NOT NULL,
+	"vintage"	integer NOT NULL,
+	"employment_cap"	real,
+	"employment_cap_units"	text,
+	"employment_cap_notes"	text,
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	PRIMARY KEY("regions","periods","tech","vintage"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods")
+);
 CREATE TABLE "DiscountRate" (
 	"regions"	text,
 	"tech"	text,

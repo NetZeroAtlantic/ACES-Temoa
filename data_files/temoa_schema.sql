@@ -243,6 +243,20 @@ CREATE TABLE "Output_Emissions" (
 	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
 	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods")
 );
+CREATE TABLE IF NOT EXISTS "Output_Employment" (
+	"regions"	text,
+	"scenario"	text,
+	"sector"	text,
+	"t_periods"	integer,
+	"tech"	text,
+	"vintage"	integer,
+	"jobs"	real,
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	PRIMARY KEY("regions","scenario","t_periods","tech","vintage"),
+	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
+	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods")
+);
 CREATE TABLE "Output_ImplicitEmissionsPrice" (
 	"regions"	text,
 	"scenario"	text,
@@ -494,6 +508,19 @@ CREATE TABLE "Efficiency" (
 	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
 	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods"),
 	FOREIGN KEY("input_comm") REFERENCES "commodities"("comm_name")
+);
+CREATE TABLE IF NOT EXISTS "EmploymentPerCapacity" (
+	"regions"	text NOT NULL,
+	"periods"	integer NOT NULL,
+	"tech"	text NOT NULL,
+	"vintage"	integer NOT NULL,
+	"employment_cap"	real,
+	"employment_cap_units"	text,
+	"employment_cap_notes"	text,
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	PRIMARY KEY("regions","periods","tech","vintage"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods")
 );
 CREATE TABLE "DiscountRate" (
 	"regions"	text,
