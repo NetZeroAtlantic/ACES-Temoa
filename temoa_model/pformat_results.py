@@ -328,6 +328,23 @@ def pformat_results(pyomo_instance, pyomo_result, options):
             )
             svars[	'Costs'	]['V_DiscountedVariableCostsByProcess', r, t, v] += vcost
 
+        system_emissions = svars['V_EmissionActivityByPeriodAndProcess']
+        for r, p, e, t, v in system_emissions.keys():
+             if (r, p, e) in m.CostEmissions.sparse_iterkeys():
+                  ecost = value(system_emissions[r, p, e, t, v])
+                   if ecost < epsilon:
+                        continue
+
+                    ecost *= value(m.CostEmissions[r, p, e])
+                    svars['Costs']['V_UndiscountedEmissionsCostsByProcess', r, t, v] += ecost * value(MPL[r, p, t, v] )
+
+                    ecost *= (
+                        value(MPL[r, p, t, v]) if not GDR else
+                        (x ** (P_0 - p + 1) * (1 - x ** (-value(MPL[r, p, t, v]))) / GDR)
+                    )
+
+                    svars['Costs']['V_DiscountedEmissionsCostsByProcess', r, t, v] += ecost
+
         # update the costs of exchange technologies.
         # Assumption 1: If Ri-Rj appears in the cost tables but Rj-Ri does not,
         # then the total costs are distributed between the regions
