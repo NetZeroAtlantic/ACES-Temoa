@@ -229,6 +229,8 @@ def temoa_create_model(name="Temoa"):
     M.MaxCapacitySum = Param(M.time_optimize)  # for techs in tech_capacity
     M.MaxActivity = Param(M.RegionalIndices, M.time_optimize, M.tech_all)
     M.MinActivity = Param(M.RegionalIndices, M.time_optimize, M.tech_all)
+    M.MaxSeasonalActivity = Param(M.RegionalIndices, M.time_optimize, M.time_season, M.tech_all)
+    M.MinSeasonalActivity = Param(M.RegionalIndices, M.time_optimize, M.time_season, M.tech_all)
     M.GrowthRateMax = Param(M.RegionalIndices, M.tech_all)
     M.GrowthRateSeed = Param(M.RegionalIndices, M.tech_all)
     M.RegionalEmissionLimit = Set(initialize=RegionalEmissionLimitIndices)
@@ -469,6 +471,20 @@ def temoa_create_model(name="Temoa"):
     )
     M.MinActivityGroup = Constraint(
         M.MinActivityGroup_pg, rule=MinActivityGroup_Constraint
+    )
+
+    M.MinSeasonalActivityConstraint_rpst = Set(
+        dimen=4, initialize=lambda M: M.MinSeasonalActivity.sparse_iterkeys()
+    )
+    M.MinSeasonalActivityConstraint = Constraint(
+        M.MinSeasonalActivityConstraint_rpst, rule=MinSeasonalActivity_Constraint
+    )
+
+    M.MaxSeasonalActivityConstraint_rpst = Set(
+        dimen=4, initialize=lambda M: M.MaxSeasonalActivity.sparse_iterkeys()
+    )
+    M.MaxSeasonalActivityConstraint = Constraint(
+        M.MaxSeasonalActivityConstraint_rpst, rule=MaxSeasonalActivity_Constraint
     )
 
     M.MaxCapacityConstraint_rpt = Set(
