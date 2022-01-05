@@ -26,8 +26,6 @@ received this license file.  If not, see <http://www.gnu.org/licenses/>.
 # ---------------------------------------------------------------------------
 
 
-from pyomo.core import value
-from DB_to_Excel import make_excel
 __all__ = ('pformat_results', 'stringify_data')
 
 from collections import defaultdict
@@ -43,13 +41,16 @@ import pandas as pd
 from temoa_config import TemoaConfig
 
 # Need line below to import DB_to_Excel.py from data_processing
-sys.path.append(os.path.join(os.getcwd(), 'data_processing'))
+sys.path.append(os.path.join(os.getcwd(), 'data_processing'))  # noqa
+from DB_to_Excel import make_excel  # noqa
 
 # Ensure compatibility with Python 2.7 and 3
 try:
     from cStringIO import StringIO
 except ImportError:
     from io import StringIO
+
+from pyomo.core import value  # noqa
 
 
 def stringify_data(data, ostream=SO, format='plain'):
@@ -256,6 +257,13 @@ def pformat_results(pyomo_instance, pyomo_result, options):
             continue
         svars['V_CapacityAvailableByPeriodAndTech'][r, p, t] = val
 
+    # Extract the implicit emissions prices. These are equivalent to the
+        # shadow price/dual variable of the emission limit constraint.
+    for r, p, e in m.EmissionLimitConstraint:
+        # dual variables are given as non-positive. For consistency we
+        # report them as non-negative.
+        svars['EmissionShadowPrice'][r, p, e] = abs(m.dual[m.EmissionLimitConstraint[r, p, e]])
+
     # Calculate model costs:
     if hasattr(options, 'file_location') and os.path.join('temoa_model', 'config_sample_myopic') not in options.file_location:
         # This is a generic workaround.  Not sure how else to automatically discover
@@ -330,20 +338,21 @@ def pformat_results(pyomo_instance, pyomo_result, options):
 
         system_emissions = svars['V_EmissionActivityByPeriodAndProcess']
         for r, p, e, t, v in system_emissions.keys():
-             if (r, p, e) in m.CostEmissions.sparse_iterkeys():
-                  ecost = value(system_emissions[r, p, e, t, v])
-                   if ecost < epsilon:
-                        continue
+            if (r, p, e) in m.CostEmissions.sparse_iterkeys():
+                ecost = value(system_emissions[r, p, e, t, v])
+                if ecost < epsilon:
+                    continue
 
-                    ecost *= value(m.CostEmissions[r, p, e])
-                    svars['Costs']['V_UndiscountedEmissionsCostsByProcess', r, t, v] += ecost * value(MPL[r, p, t, v] )
+                ecost *= value(m.CostEmissions[r, p, e])
+                svars['Costs']['V_UndiscountedEmissionsCostsByProcess',
+                               r, t, v] += ecost * value(MPL[r, p, t, v])
 
-                    ecost *= (
-                        value(MPL[r, p, t, v]) if not GDR else
-                        (x ** (P_0 - p + 1) * (1 - x ** (-value(MPL[r, p, t, v]))) / GDR)
-                    )
+                ecost *= (
+                    value(MPL[r, p, t, v]) if not GDR else
+                    (x ** (P_0 - p + 1) * (1 - x ** (-value(MPL[r, p, t, v]))) / GDR)
+                )
 
-                    svars['Costs']['V_DiscountedEmissionsCostsByProcess', r, t, v] += ecost
+                svars['Costs']['V_DiscountedEmissionsCostsByProcess', r, t, v] += ecost
 
         # update the costs of exchange technologies.
         # Assumption 1: If Ri-Rj appears in the cost tables but Rj-Ri does not,
@@ -458,7 +467,8 @@ def pformat_results(pyomo_instance, pyomo_result, options):
               "V_CapacityAvailableByPeriodAndTech": "Output_CapacityByPeriodAndTech",
               "V_EmissionActivityByPeriodAndProcess": "Output_Emissions",
               "Objective": "Output_Objective",
-              "Costs": "Output_Costs"
+              "Costs": "Output_Costs",
+              "EmissionShadowPrice": "Output_ImplicitEmissionsPrice"
               }
 
     db_tables = ['time_periods', 'time_season', 'time_of_day', 'technologies', 'commodities',
@@ -547,13 +557,20 @@ def pformat_results(pyomo_instance, pyomo_result, options):
                     if hasattr(options, 'file_location') and options.scenario == val[0] and os.path.join('temoa_model', 'config_sample_myopic') not in options.file_location:
                         cur.execute("DELETE FROM "+tables[table]+" \
 									WHERE scenario is '"+options.scenario+"'")
-                if table == 'Objective':  # Only table without sector info
+                if table == 'Objective':  # First of two tables without sector info
                     for key in svars[table].keys():
                         key_str = str(key)  # only 1 row to write
                         key_str = key_str[1:-1]  # Remove parentheses
                         cur.execute("INSERT INTO "+tables[table]+" \
 									VALUES('"+options.scenario+"',"+key_str+", \
 									"+str(svars[table][key])+");")
+                elif table == 'EmissionShadowPrice':  # Second of two tables without sector info
+                    for key in svars[table].keys():  # Need to loop over keys (rows)
+                        key_str = str(key)
+                        key_str = key_str[1:-1]  # Remove
+                        cur.execute("INSERT INTO "+tables[table] +
+                                    " VALUES('"+str(key[0])+"', '"+options.scenario+"', \
+										"+key_str[key_str.find(',')+1:]+","+str(svars[table][key])+");")
                 else:  # First add 'NULL' for sector then update
                     for key in svars[table].keys():  # Need to loop over keys (rows)
                         key_str = str(key)
