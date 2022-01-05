@@ -169,6 +169,7 @@ def db_2_dat(ifile, ofile, options):
         ['param', 'CapacityCredit',            '',                    '',             4],
         ['param', 'RampUp',                    '',                    '',             2],
         ['param', 'RampDown',                  '',                    '',             2],
+        ['param', 'EmploymentPerCapacity',     '',                    '',             4],
         ['param', 'StorageInitFrac',           '',                    '',             3],
         ['param', 'StorageDuration',           '',                    '',             2]]
 

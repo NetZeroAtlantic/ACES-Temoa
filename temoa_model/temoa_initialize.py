@@ -842,6 +842,10 @@ def CapacityFactorTechIndices(M):
     return indices
 
 
+def EmploymentIndices(M):
+    return M.activeActivity_rptv
+
+
 def CostFixedIndices(M):
     return M.activeActivity_rptv
 

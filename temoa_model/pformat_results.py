@@ -264,6 +264,20 @@ def pformat_results(pyomo_instance, pyomo_result, options):
         # report them as non-negative.
         svars['EmissionShadowPrice'][r, p, e] = abs(m.dual[m.EmissionLimitConstraint[r, p, e]])
 
+    # Calculate the job numbers
+    if hasattr(options, 'file_location') and os.path.join('temoa_model', 'config_sample_myopic') not in options.file_location:
+        for r, t, v in m.V_Capacity:
+            val = value(m.V_Capacity[r, t, v])
+            if abs(val) < epsilon:
+                continue
+            for p in m.time_future:
+                if (r, p, t, v) in m.EmploymentPerCapacity.sparse_iterkeys():
+                    jobs = abs(val) * value(m.EmploymentPerCapacity[r, p, t, v])
+                    if abs(jobs) < epsilon:
+                        continue
+
+                    svars['Jobs'][r, p, t, v] += jobs
+
     # Calculate model costs:
     if hasattr(options, 'file_location') and os.path.join('temoa_model', 'config_sample_myopic') not in options.file_location:
         # This is a generic workaround.  Not sure how else to automatically discover
@@ -468,7 +482,8 @@ def pformat_results(pyomo_instance, pyomo_result, options):
               "V_EmissionActivityByPeriodAndProcess": "Output_Emissions",
               "Objective": "Output_Objective",
               "Costs": "Output_Costs",
-              "EmissionShadowPrice": "Output_ImplicitEmissionsPrice"
+              "EmissionShadowPrice": "Output_ImplicitEmissionsPrice",
+              "Jobs": "Output_Employment"
               }
 
     db_tables = ['time_periods', 'time_season', 'time_of_day', 'technologies', 'commodities',

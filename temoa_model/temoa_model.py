@@ -221,6 +221,10 @@ def temoa_create_model(name="Temoa"):
         M.ProcessLifeFrac_rptv, initialize=ParamProcessLifeFraction_rule
     )
 
+    # Define employment factors
+    M.Employment_rptv = Set(dimen=4, initialize=EmploymentIndices)
+    M.EmploymentPerCapacity = Param(M.Employment_rptv, mutable=True)
+
     # Define parameters associated with user-defined constraints
     M.MinCapacity = Param(M.RegionalIndices, M.time_optimize, M.tech_all)
     M.MaxCapacity = Param(M.RegionalIndices, M.time_optimize, M.tech_all)
