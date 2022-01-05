@@ -84,22 +84,23 @@ def make_excel(ifile, ofile, scenario):
     query = "SELECT regions, tech, sector, t_periods, emissions_comm, sum(emissions) as emissions FROM Output_Emissions WHERE scenario='" + scenario + "' GROUP BY \
 	regions, tech, sector, t_periods, emissions_comm"
     df_emissions_raw = pd.read_sql_query(query, con)
-    df_emissions = df_emissions_raw.pivot_table(
-        values='emissions', index=['regions', 'tech', 'sector', 'emissions_comm'], columns='t_periods')
-    df_emissions.reset_index(inplace=True)
-    df_emissions = pd.merge(all_emis_techs, df_emissions, on=[
-                            'regions', 'tech', 'sector', 'emissions_comm'], how='left')
-    df_emissions.rename(columns={'regions': 'Region', 'tech': 'Technology',
-                                 'emissions_comm': 'Emission Commodity', 'sector': 'Sector'}, inplace=True)
-    df_emissions.to_excel(writer, sheet_name='Emissions', index=False,
-                          encoding='utf-8', startrow=1, header=False)
-    worksheet = writer.sheets['Emissions']
-    worksheet.set_column('A:A', 10)
-    worksheet.set_column('B:B', 10)
-    worksheet.set_column('C:C', 10)
-    worksheet.set_column('D:D', 20)
-    for col, val in enumerate(df_emissions.columns.values):
-        worksheet.write(0, col, val, header_format)
+    if not df_emissions_raw.empty:
+        df_emissions = df_emissions_raw.pivot_table(
+            values='emissions', index=['regions', 'tech', 'sector', 'emissions_comm'], columns='t_periods')
+        df_emissions.reset_index(inplace=True)
+        df_emissions = pd.merge(all_emis_techs, df_emissions, on=[
+                                'regions', 'tech', 'sector', 'emissions_comm'], how='left')
+        df_emissions.rename(columns={'regions': 'Region', 'tech': 'Technology',
+                                     'emissions_comm': 'Emission Commodity', 'sector': 'Sector'}, inplace=True)
+        df_emissions.to_excel(writer, sheet_name='Emissions', index=False,
+                              encoding='utf-8', startrow=1, header=False)
+        worksheet = writer.sheets['Emissions']
+        worksheet.set_column('A:A', 10)
+        worksheet.set_column('B:B', 10)
+        worksheet.set_column('C:C', 10)
+        worksheet.set_column('D:D', 20)
+        for col, val in enumerate(df_emissions.columns.values):
+            worksheet.write(0, col, val, header_format)
 
     query = "SELECT regions, tech, sector, output_name,  vintage, output_cost FROM Output_Costs WHERE output_name LIKE '%V_Discounted%' AND scenario='" + scenario + "'"
     df_costs = pd.read_sql_query(query, con)
