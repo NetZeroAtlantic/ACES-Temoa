@@ -291,7 +291,7 @@ class OutputPlotGenerator:
         for i in range(0, len(techs)):
             # colors.append(self.generate_new_color(colors,pastel_factor = 0.9))
             # color_map[plot_var.keys()[i]]=colors[i]
-            color_map[plot_var.keys()[i]] = cmap(i)
+            color_map[list(plot_var.keys())[i]] = cmap(i)
 
         b = [0]*len(periods)
         for tech in techs:
