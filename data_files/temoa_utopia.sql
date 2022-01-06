@@ -45,31 +45,37 @@ CREATE TABLE "technologies" (
 	"tech"	text,
 	"flag"	text,
 	"sector"	text,
+	"subsector"	text,
 	"tech_desc"	text,
 	"tech_category"	text,
+	"cap_units",
+	"color"	text,
+	"plot_order"	text,
 	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
+	FOREIGN KEY("subsector") REFERENCES "subsector_labels"("subsector"),
 	FOREIGN KEY("flag") REFERENCES "technology_labels"("tech_labels"),
+	FOREIGN KEY("flag") REFERENCES "technology_labels"("tech_labels")
 	PRIMARY KEY("tech")
 );
-INSERT INTO `technologies` VALUES ('IMPDSL1','r','supply',' imported diesel','petroleum');
-INSERT INTO `technologies` VALUES ('IMPGSL1','r','supply',' imported gasoline','petroleum');
-INSERT INTO `technologies` VALUES ('IMPHCO1','r','supply',' imported coal','coal');
-INSERT INTO `technologies` VALUES ('IMPOIL1','r','supply',' imported crude oil','petroleum');
-INSERT INTO `technologies` VALUES ('IMPURN1','r','supply',' imported uranium','uranium');
-INSERT INTO `technologies` VALUES ('IMPFEQ','r','supply',' imported fossil equivalent','');
-INSERT INTO `technologies` VALUES ('IMPHYD','r','supply',' imported water -- doesnt exist in Utopia','water');
-INSERT INTO `technologies` VALUES ('E01','pb','electric',' coal power plant','coal');
-INSERT INTO `technologies` VALUES ('E21','pb','electric',' nuclear power plant','nuclear');
-INSERT INTO `technologies` VALUES ('E31','pb','electric',' hydro power','hydro');
-INSERT INTO `technologies` VALUES ('E51','ps','electric',' electric storage','storage');
-INSERT INTO `technologies` VALUES ('E70','p','electric',' diesel power plant','diesel');
-INSERT INTO `technologies` VALUES ('RHE','p','residential',' electric residential heating','electric');
-INSERT INTO `technologies` VALUES ('RHO','p','residential',' diesel residential heating','diesel');
-INSERT INTO `technologies` VALUES ('RL1','p','residential',' residential lighting','electric');
-INSERT INTO `technologies` VALUES ('SRE','p','supply',' crude oil processor','petroleum');
-INSERT INTO `technologies` VALUES ('TXD','p','transport',' diesel powered vehicles','diesel');
-INSERT INTO `technologies` VALUES ('TXE','p','transport',' electric powered vehicles','electric');
-INSERT INTO `technologies` VALUES ('TXG','p','transport',' gasoline powered vehicles','gasoline');
+INSERT INTO `technologies` VALUES ('IMPDSL1','r','supply','',' imported diesel','petroleum','','','');
+INSERT INTO `technologies` VALUES ('IMPGSL1','r','supply','',' imported gasoline','petroleum','','','');
+INSERT INTO `technologies` VALUES ('IMPHCO1','r','supply','',' imported coal','coal','','','');
+INSERT INTO `technologies` VALUES ('IMPOIL1','r','supply','',' imported crude oil','petroleum','','','');
+INSERT INTO `technologies` VALUES ('IMPURN1','r','supply','',' imported uranium','uranium','','','');
+INSERT INTO `technologies` VALUES ('IMPFEQ','r','supply','',' imported fossil equivalent','','','','');
+INSERT INTO `technologies` VALUES ('IMPHYD','r','supply','',' imported water -- doesnt exist in Utopia','water','','','');
+INSERT INTO `technologies` VALUES ('E01','pb','electric','',' coal power plant','coal','','','');
+INSERT INTO `technologies` VALUES ('E21','pb','electric','',' nuclear power plant','nuclear','','','');
+INSERT INTO `technologies` VALUES ('E31','pb','electric','',' hydro power','hydro','','','');
+INSERT INTO `technologies` VALUES ('E51','ps','electric','',' electric storage','storage','','','');
+INSERT INTO `technologies` VALUES ('E70','p','electric','',' diesel power plant','diesel','','','');
+INSERT INTO `technologies` VALUES ('RHE','p','residential','',' electric residential heating','electric','','','');
+INSERT INTO `technologies` VALUES ('RHO','p','residential','',' diesel residential heating','diesel','','','');
+INSERT INTO `technologies` VALUES ('RL1','p','residential','',' residential lighting','electric','','','');
+INSERT INTO `technologies` VALUES ('SRE','p','supply','',' crude oil processor','petroleum','','','');
+INSERT INTO `technologies` VALUES ('TXD','p','transport','',' diesel powered vehicles','diesel','','','');
+INSERT INTO `technologies` VALUES ('TXE','p','transport','',' electric powered vehicles','electric','','','');
+INSERT INTO `technologies` VALUES ('TXG','p','transport','',' gasoline powered vehicles','gasoline','','','');
 CREATE TABLE "tech_reserve" (
 	"tech"	text,
 	"notes"	text,
@@ -100,20 +106,31 @@ CREATE TABLE "tech_annual" (
 );
 CREATE TABLE "sector_labels" (
 	"sector"	text,
+	"description"	text,
+	"color"	text,
+	"plot_order"	text,
 	PRIMARY KEY("sector")
 );
-INSERT INTO `sector_labels` VALUES ('supply');
-INSERT INTO `sector_labels` VALUES ('electric');
-INSERT INTO `sector_labels` VALUES ('transport');
-INSERT INTO `sector_labels` VALUES ('commercial');
-INSERT INTO `sector_labels` VALUES ('residential');
-INSERT INTO `sector_labels` VALUES ('industrial');
+INSERT INTO `sector_labels` VALUES ('supply','supply','','');
+INSERT INTO `sector_labels` VALUES ('electric','electric','','');
+INSERT INTO `sector_labels` VALUES ('transport','transport','','');
+INSERT INTO `sector_labels` VALUES ('commercial','commercial','','');
+INSERT INTO `sector_labels` VALUES ('residential','residential','','');
+INSERT INTO `sector_labels` VALUES ('industrial','industrial','','');
+CREATE TABLE "subsector_labels" (
+	"subsector"	text,
+	"description"	text,
+	"color"	text,
+	"plot_order"	text,
+	PRIMARY KEY("subsector")
+);
 CREATE TABLE "regions" (
 	"regions"	TEXT,
+	"plot_order"	integer,
 	"region_note"	TEXT,
 	PRIMARY KEY("regions")
 );
-INSERT INTO `regions` VALUES ('utopia',NULL);
+INSERT INTO `regions` VALUES ('utopia',1,NULL);
 CREATE TABLE "groups" (
 	"group_name"	text,
 	"notes"	text,
@@ -131,23 +148,24 @@ CREATE TABLE "commodities" (
 	"comm_name"	text,
 	"flag"	text,
 	"comm_desc"	text,
+	"units"	text,
 	FOREIGN KEY("flag") REFERENCES "commodity_labels"("comm_labels"),
 	PRIMARY KEY("comm_name")
 );
-INSERT INTO `commodities` VALUES ('ethos','p','# dummy commodity to supply inputs (makes graph easier to read)');
-INSERT INTO `commodities` VALUES ('DSL','p','# diesel');
-INSERT INTO `commodities` VALUES ('ELC','p','# electricity');
-INSERT INTO `commodities` VALUES ('FEQ','p','# fossil equivalent');
-INSERT INTO `commodities` VALUES ('GSL','p','# gasoline');
-INSERT INTO `commodities` VALUES ('HCO','p','# coal');
-INSERT INTO `commodities` VALUES ('HYD','p','# water');
-INSERT INTO `commodities` VALUES ('OIL','p','# crude oil');
-INSERT INTO `commodities` VALUES ('URN','p','# uranium');
-INSERT INTO `commodities` VALUES ('co2','e','#CO2 emissions');
-INSERT INTO `commodities` VALUES ('nox','e','#NOX emissions');
-INSERT INTO `commodities` VALUES ('RH','d','# residential heating');
-INSERT INTO `commodities` VALUES ('RL','d','# residential lighting');
-INSERT INTO `commodities` VALUES ('TX','d','# transportation');
+INSERT INTO `commodities` VALUES ('ethos','p','# dummy commodity to supply inputs (makes graph easier to read)','');
+INSERT INTO `commodities` VALUES ('DSL','p','# diesel','');
+INSERT INTO `commodities` VALUES ('ELC','p','# electricity','');
+INSERT INTO `commodities` VALUES ('FEQ','p','# fossil equivalent','');
+INSERT INTO `commodities` VALUES ('GSL','p','# gasoline','');
+INSERT INTO `commodities` VALUES ('HCO','p','# coal','');
+INSERT INTO `commodities` VALUES ('HYD','p','# water','');
+INSERT INTO `commodities` VALUES ('OIL','p','# crude oil','');
+INSERT INTO `commodities` VALUES ('URN','p','# uranium','');
+INSERT INTO `commodities` VALUES ('co2','e','#CO2 emissions','');
+INSERT INTO `commodities` VALUES ('nox','e','#NOX emissions','');
+INSERT INTO `commodities` VALUES ('RH','d','# residential heating','');
+INSERT INTO `commodities` VALUES ('RL','d','# residential lighting','');
+INSERT INTO `commodities` VALUES ('TX','d','# transportation','');
 CREATE TABLE "TechOutputSplit" (
 	"regions"	TEXT,
 	"periods"	integer,

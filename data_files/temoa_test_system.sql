@@ -44,28 +44,34 @@ CREATE TABLE "technologies" (
 	"tech"	text,
 	"flag"	text,
 	"sector"	text,
+	"subsector"	text,
 	"tech_desc"	text,
 	"tech_category"	text,
-	PRIMARY KEY("tech"),
+	"cap_units",
+	"color"	text,
+	"plot_order"	text,
 	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
+	FOREIGN KEY("subsector") REFERENCES "subsector_labels"("subsector"),
+	FOREIGN KEY("flag") REFERENCES "technology_labels"("tech_labels"),
 	FOREIGN KEY("flag") REFERENCES "technology_labels"("tech_labels")
+	PRIMARY KEY("tech")
 );
-INSERT INTO `technologies` VALUES ('S_IMPETH','r','supply',' imported ethanol','');
-INSERT INTO `technologies` VALUES ('S_IMPOIL','r','supply',' imported crude oil','');
-INSERT INTO `technologies` VALUES ('S_IMPNG','r','supply',' imported natural gas','');
-INSERT INTO `technologies` VALUES ('S_IMPURN','r','supply',' imported uranium','');
-INSERT INTO `technologies` VALUES ('S_OILREF','p','supply',' crude oil refinery','');
-INSERT INTO `technologies` VALUES ('E_NGCC','p','electric',' natural gas combined-cycle','');
-INSERT INTO `technologies` VALUES ('E_SOLPV','p','electric',' solar photovoltaic','');
-INSERT INTO `technologies` VALUES ('E_BATT','ps','electric',' lithium-ion battery','');
-INSERT INTO `technologies` VALUES ('E_NUCLEAR','pb','electric',' nuclear power plant','');
-INSERT INTO `technologies` VALUES ('T_BLND','p','transport','ethanol - gasoline blending process','');
-INSERT INTO `technologies` VALUES ('T_DSL','p','transport','diesel vehicle','');
-INSERT INTO `technologies` VALUES ('T_GSL','p','transport','gasoline vehicle','');
-INSERT INTO `technologies` VALUES ('T_EV','p','transport','electric vehicle','');
-INSERT INTO `technologies` VALUES ('R_EH','p','residential',' electric residential heating','');
-INSERT INTO `technologies` VALUES ('R_NGH','p','residential',' natural gas residential heating','');
-INSERT INTO `technologies` VALUES ('E_TRANS','p','electric','electric transmission','');
+INSERT INTO `technologies` VALUES ('S_IMPETH','r','supply','',' imported ethanol','','','','');
+INSERT INTO `technologies` VALUES ('S_IMPOIL','r','supply','',' imported crude oil','','','','');
+INSERT INTO `technologies` VALUES ('S_IMPNG','r','supply','',' imported natural gas','','','','');
+INSERT INTO `technologies` VALUES ('S_IMPURN','r','supply','',' imported uranium','','','','');
+INSERT INTO `technologies` VALUES ('S_OILREF','p','supply','',' crude oil refinery','','','','');
+INSERT INTO `technologies` VALUES ('E_NGCC','p','electric','',' natural gas combined-cycle','','','','');
+INSERT INTO `technologies` VALUES ('E_SOLPV','p','electric','',' solar photovoltaic','','','','');
+INSERT INTO `technologies` VALUES ('E_BATT','ps','electric','',' lithium-ion battery','','','','');
+INSERT INTO `technologies` VALUES ('E_NUCLEAR','pb','electric','',' nuclear power plant','','','','');
+INSERT INTO `technologies` VALUES ('T_BLND','p','transport','','ethanol - gasoline blending process','','','','');
+INSERT INTO `technologies` VALUES ('T_DSL','p','transport','','diesel vehicle','','','','');
+INSERT INTO `technologies` VALUES ('T_GSL','p','transport','','gasoline vehicle','','','','');
+INSERT INTO `technologies` VALUES ('T_EV','p','transport','','electric vehicle','','','','');
+INSERT INTO `technologies` VALUES ('R_EH','p','residential','',' electric residential heating','','','','');
+INSERT INTO `technologies` VALUES ('R_NGH','p','residential','',' natural gas residential heating','','','','');
+INSERT INTO `technologies` VALUES ('E_TRANS','p','electric','','electric transmission','','','','');
 CREATE TABLE "tech_reserve" (
 	"tech"	text,
 	"notes"	text,
@@ -99,21 +105,32 @@ CREATE TABLE "tech_annual" (
 );
 CREATE TABLE "sector_labels" (
 	"sector"	text,
+	"description"	text,
+	"color"	text,
+	"plot_order"	text,
 	PRIMARY KEY("sector")
 );
-INSERT INTO `sector_labels` VALUES ('supply');
-INSERT INTO `sector_labels` VALUES ('electric');
-INSERT INTO `sector_labels` VALUES ('transport');
-INSERT INTO `sector_labels` VALUES ('commercial');
-INSERT INTO `sector_labels` VALUES ('residential');
-INSERT INTO `sector_labels` VALUES ('industrial');
+INSERT INTO `sector_labels` VALUES ('supply','supply','','');
+INSERT INTO `sector_labels` VALUES ('electric','electric','','');
+INSERT INTO `sector_labels` VALUES ('transport','transport','','');
+INSERT INTO `sector_labels` VALUES ('commercial','commercial','','');
+INSERT INTO `sector_labels` VALUES ('residential','residential','','');
+INSERT INTO `sector_labels` VALUES ('industrial','industrial','','');
+CREATE TABLE "subsector_labels" (
+	"subsector"	text,
+	"description"	text,
+	"color"	text,
+	"plot_order"	text,
+	PRIMARY KEY("subsector")
+);
 CREATE TABLE "regions" (
 	"regions"	TEXT,
+	"plot_order"	integer,
 	"region_note"	TEXT,
 	PRIMARY KEY("regions")
 );
-INSERT INTO `regions` VALUES ('R1',NULL);
-INSERT INTO `regions` VALUES ('R2',NULL);
+INSERT INTO `regions` VALUES ('R1',1,NULL);
+INSERT INTO `regions` VALUES ('R2',2,NULL);
 CREATE TABLE "groups" (
 	"group_name"	text,
 	"notes"	text,
@@ -131,22 +148,23 @@ CREATE TABLE "commodities" (
 	"comm_name"	text,
 	"flag"	text,
 	"comm_desc"	text,
+	"units"	text,
 	PRIMARY KEY("comm_name"),
 	FOREIGN KEY("flag") REFERENCES "commodity_labels"("comm_labels")
 );
-INSERT INTO `commodities` VALUES ('ethos','p','dummy commodity to supply inputs (makes graph easier to read)');
-INSERT INTO `commodities` VALUES ('OIL','p','crude oil');
-INSERT INTO `commodities` VALUES ('NG','p','natural gas');
-INSERT INTO `commodities` VALUES ('URN','p','uranium');
-INSERT INTO `commodities` VALUES ('ETH','p','ethanol');
-INSERT INTO `commodities` VALUES ('SOL','p','solar insolation');
-INSERT INTO `commodities` VALUES ('GSL','p','gasoline');
-INSERT INTO `commodities` VALUES ('DSL','p','diesel');
-INSERT INTO `commodities` VALUES ('ELC','p','electricity');
-INSERT INTO `commodities` VALUES ('E10','p','gasoline blend with 10% ethanol');
-INSERT INTO `commodities` VALUES ('VMT','d','travel demand for vehicle-miles traveled');
-INSERT INTO `commodities` VALUES ('RH','d','demand for residential heating');
-INSERT INTO `commodities` VALUES ('CO2','e','CO2 emissions commodity');
+INSERT INTO `commodities` VALUES ('ethos','p','dummy commodity to supply inputs (makes graph easier to read)','');
+INSERT INTO `commodities` VALUES ('OIL','p','crude oil','');
+INSERT INTO `commodities` VALUES ('NG','p','natural gas','');
+INSERT INTO `commodities` VALUES ('URN','p','uranium','');
+INSERT INTO `commodities` VALUES ('ETH','p','ethanol','');
+INSERT INTO `commodities` VALUES ('SOL','p','solar insolation','');
+INSERT INTO `commodities` VALUES ('GSL','p','gasoline','');
+INSERT INTO `commodities` VALUES ('DSL','p','diesel','');
+INSERT INTO `commodities` VALUES ('ELC','p','electricity','');
+INSERT INTO `commodities` VALUES ('E10','p','gasoline blend with 10% ethanol','');
+INSERT INTO `commodities` VALUES ('VMT','d','travel demand for vehicle-miles traveled','');
+INSERT INTO `commodities` VALUES ('RH','d','demand for residential heating','');
+INSERT INTO `commodities` VALUES ('CO2','e','CO2 emissions commodity','');
 CREATE TABLE "TechOutputSplit" (
 	"regions"	TEXT,
 	"periods"	integer,

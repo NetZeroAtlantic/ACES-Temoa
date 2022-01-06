@@ -27,11 +27,17 @@ CREATE TABLE "technologies" (
 	"tech"	text,
 	"flag"	text,
 	"sector"	text,
+	"subsector"	text,
 	"tech_desc"	text,
 	"tech_category"	text,
-	PRIMARY KEY("tech"),
+	"cap_units",
+	"color"	text,
+	"plot_order"	text,
+	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
+	FOREIGN KEY("subsector") REFERENCES "subsector_labels"("subsector"),
 	FOREIGN KEY("flag") REFERENCES "technology_labels"("tech_labels"),
-	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector")
+	FOREIGN KEY("flag") REFERENCES "technology_labels"("tech_labels")
+	PRIMARY KEY("tech")
 );
 CREATE TABLE "tech_ramping" (
 	"tech"	text,
@@ -69,10 +75,21 @@ CREATE TABLE "tech_annual" (
 );
 CREATE TABLE "sector_labels" (
 	"sector"	text,
+	"description"	text,
+	"color"	text,
+	"plot_order"	text,
 	PRIMARY KEY("sector")
+);
+CREATE TABLE "subsector_labels" (
+	"subsector"	text,
+	"description"	text,
+	"color"	text,
+	"plot_order"	text,
+	PRIMARY KEY("subsector")
 );
 CREATE TABLE "regions" (
 	"regions"	TEXT,
+	"plot_order"	integer,
 	"region_note"	TEXT,
 	PRIMARY KEY("regions")
 );
@@ -90,6 +107,7 @@ CREATE TABLE "commodities" (
 	"comm_name"	text,
 	"flag"	text,
 	"comm_desc"	text,
+	"units"	text,
 	PRIMARY KEY("comm_name"),
 	FOREIGN KEY("flag") REFERENCES "commodity_labels"("comm_labels")
 );
