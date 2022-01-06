@@ -35,4 +35,6 @@ dependencies:
     - sphinxcontrib-bibtex
     # cbc solver below cannot be installed via Conda on Windows
     - coincbc
+    # Below required for dashboard
+    - dash
 
