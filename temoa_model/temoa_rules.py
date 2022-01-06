@@ -496,7 +496,8 @@ def PeriodCost_rule(M, p):
         if (r, p, S_t, S_v) in M.processInputs.keys()
     )
 
-    period_costs = loan_costs + fixed_costs + variable_costs + variable_costs_annual
+    period_costs = loan_costs + fixed_costs + variable_costs + \
+        variable_costs_annual + variable_emission_costs
     return period_costs
 
 
