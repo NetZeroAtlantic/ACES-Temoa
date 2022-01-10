@@ -136,7 +136,7 @@ def db_2_dat(ifile, ofile, options):
         ['param', 'SegFrac',                   '',                    '',             2],
         ['param', 'DemandSpecificDistribution', '',                    '',             4],
         ['param', 'CapacityToActivity',        '',                    '',             2],
-        ['param', 'PlanningReserveMargin',     '',                    '',             2],
+        ['param', 'PlanningReserveMargin',     '',                    '',             1],
         ['param', 'GlobalDiscountRate',        '',                    '',             0],
         ['param', 'MyopicBaseyear',            '',                    '',             0],
         ['param', 'DiscountRate',              '',                    '',             3],
