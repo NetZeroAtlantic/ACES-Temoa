@@ -38,11 +38,11 @@ import subprocess
 import sys
 import pandas as pd
 
-from temoa_config import TemoaConfig
+from .temoa_config import TemoaConfig
 
 # Need line below to import DB_to_Excel.py from data_processing
 sys.path.append(os.path.join(os.getcwd(), 'data_processing'))  # noqa
-from DB_to_Excel import make_excel  # noqa
+from thirdparty.temoa.data_processing.DB_to_Excel import make_excel  # noqa
 
 # Ensure compatibility with Python 2.7 and 3
 try:

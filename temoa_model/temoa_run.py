@@ -28,7 +28,7 @@ from pyomo.opt import SolverFactory as SF
 from pyomo.opt import SolverManagerFactory
 from pyomo.environ import *
 
-from temoa_config import TemoaConfig
+from .temoa_config import TemoaConfig
 
 import errno
 import warnings
@@ -50,11 +50,11 @@ import gc
 
 from pyomo.environ import DataPortal
 
-from pformat_results import pformat_results
+from .pformat_results import pformat_results
 
 from collections import defaultdict
-from temoa_rules import TotalCost_rule, ActivityByTech_Constraint
-from temoa_mga import ActivityObj_rule, SlackedObjective_rule, PreviousAct_rule
+from .temoa_rules import TotalCost_rule, ActivityByTech_Constraint
+from .temoa_mga import ActivityObj_rule, SlackedObjective_rule, PreviousAct_rule
 import traceback
 
 

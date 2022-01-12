@@ -23,7 +23,7 @@ received this license file.  If not, see <http://www.gnu.org/licenses/>.
 # (e.g., 1/2 = 0 instead of 0.5)
 from __future__ import division
 
-from temoa_initialize import *
+from .temoa_initialize import *
 
 # ---------------------------------------------------------------
 # Define the derived variables used in the objective function

@@ -2,9 +2,9 @@ from subprocess import call
 import os
 import sys
 
-from GraphVizUtil import *
-from DatabaseUtil import *
-from GraphVizFormats import *
+from .GraphVizUtil import *
+from .DatabaseUtil import *
+from .GraphVizFormats import *
 
 
 class GraphvizDiagramGenerator(object):

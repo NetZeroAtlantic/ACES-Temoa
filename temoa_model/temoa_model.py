@@ -21,9 +21,9 @@ in LICENSE.txt.  Users uncompressing this from an archive may not have
 received this license file.  If not, see <http://www.gnu.org/licenses/>.
 """
 
-from temoa_rules import *
-from temoa_initialize import *
-from temoa_run import *
+from thirdparty.temoa.temoa_model.temoa_rules import *
+from thirdparty.temoa.temoa_model.temoa_initialize import *
+from thirdparty.temoa.temoa_model.temoa_run import *
 
 import IPython
 
