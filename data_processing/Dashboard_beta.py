@@ -1016,19 +1016,20 @@ class OutputPlotGenerator:
 
             color = stack_descriptor[stack_descriptor[column_to_stack] == st].color.values[0]
 
-            if color == '':
+            if matplotlib.colors.is_color_like(color):
                 fig.add_trace(go.Bar(x=years,
                                      y=vals,
+                                     marker_color=stack_descriptor[stack_descriptor[column_to_stack]
+                                                                   == st].color.values[0],
                                      name=label,
                                      text=[label +
                                            ': '+str(round(_, 2))+' ' + unit for _ in vals],
                                      hoverinfo='text'
                                      ))
+
             else:
                 fig.add_trace(go.Bar(x=years,
                                      y=vals,
-                                     marker_color=stack_descriptor[stack_descriptor[column_to_stack]
-                                                                   == st].color.values[0],
                                      name=label,
                                      text=[label +
                                            ': '+str(round(_, 2))+' ' + unit for _ in vals],
@@ -1091,11 +1092,12 @@ class OutputPlotGenerator:
                     label = self.tech_info[self.tech_info.tech == t].description.values[0]
                 color = self.tech_info[self.tech_info['tech'] == t].color.values[0]
 
-                if color == '':
+                if matplotlib.colors.is_color_like(color):
                     fig.add_trace(go.Bar(x=vals.index,
                                          y=vals.values,
                                          base=base.values,
                                          offsetgroup=0,
+                                         marker_color=color,
                                          name=label,
                                          text=[label +
                                                ': '+str(round(_, 2))+' ' + unit for _ in vals],
@@ -1104,12 +1106,12 @@ class OutputPlotGenerator:
                                          showlegend=not col
                                          ),
                                   row=1, col=col+1)
+
                 else:
                     fig.add_trace(go.Bar(x=vals.index,
                                          y=vals.values,
                                          base=base.values,
                                          offsetgroup=0,
-                                         marker_color=color,
                                          name=label,
                                          text=[label +
                                                ': '+str(round(_, 2))+' ' + unit for _ in vals],
