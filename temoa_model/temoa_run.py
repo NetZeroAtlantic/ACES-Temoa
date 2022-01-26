@@ -76,7 +76,7 @@ If any new function is added and its output is also needed to be printed to UI,
 then use yield statements along with yield and then at the time of calling that function
 yield the output of the function. like:
 for statement in function_call():
-	yield statement
+    yield statement
 This will yield each statement being yielded by function_call().
 This is followed all the way through to the first function_call of the UI where it is returned
 as a StreamingHttpResponse().
@@ -147,9 +147,9 @@ class TemoaSolver(object):
                     raw_input()
 
     '''
-	This function is called when MGA option is specified.
-	It uses the self.model, self.optimzer, and self.options parameters of the class object
-	'''
+    This function is called when MGA option is specified.
+    It uses the self.model, self.optimzer, and self.options parameters of the class object
+    '''
 
     def solveWithMGA(self):
         scenario_names = []
@@ -239,8 +239,8 @@ class TemoaSolver(object):
                 temoaMGAInstance.instance, self.options.mga_weight, prev_activity_t)
 
     '''
-	This function is called when MGA option is not specified.
-	'''
+    This function is called when MGA option is not specified.
+    '''
 
     def solveWithoutMGA(self):
 
@@ -266,9 +266,9 @@ class TemoaSolver(object):
             temoaInstance1.handle_files(log_name='Complete_OutputLog.log')
 
     '''
-	This funciton creates and solves TemoaSolverInstance.
-	This is the function that should be called from outside this class after __init__
-	'''
+    This funciton creates and solves TemoaSolverInstance.
+    This is the function that should be called from outside this class after __init__
+    '''
 
     def createAndSolve(self):
         try:
@@ -400,13 +400,13 @@ class TemoaSolverInstance(object):
                 if self.options.neos:
                     self.result = self.optimizer.solve(self.instance, opt=self.options.solver)
                 else:
-					if self.options.solver == 'cbc':
-						sym_labels = False
-						# Note: The cbc solver encounters errors when variable names exceed
-						# 100 characters. To prevent this error from occuring, we do not
-						# send symbolic variable names to the solver.
-					else:
-						sym_labels = self.options.keepPyomoLP
+                    if self.options.solver == 'cbc':
+                        sym_labels = False
+                        # Note: The cbc solver encounters errors when variable names exceed
+                        # 100 characters. To prevent this error from occuring, we do not
+                        # send symbolic variable names to the solver.
+                    else:
+                        sym_labels = self.options.keepPyomoLP
                     self.result = self.optimizer.solve(self.instance, suffixes=['dual'],  # 'rc', 'slack'],
                                                        keepfiles=self.options.keepPyomoLP,
                                                        symbolic_solver_labels=sym_labels)
