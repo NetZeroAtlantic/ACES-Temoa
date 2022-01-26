@@ -369,8 +369,8 @@ class TemoaSolverInstance(object):
             self.txt_file.write('Creating Temoa model instance.')
 
             self.model.dual = Suffix(direction=Suffix.IMPORT)
-            #self.model.rc = Suffix(direction=Suffix.IMPORT)
-            #self.model.slack = Suffix(direction=Suffix.IMPORT)
+            # self.model.rc = Suffix(direction=Suffix.IMPORT)
+            # self.model.slack = Suffix(direction=Suffix.IMPORT)
 
             self.instance = self.model.create_instance(modeldata)
             yield '\t\t\t\t[%8.2f]\n' % duration()
@@ -400,9 +400,16 @@ class TemoaSolverInstance(object):
                 if self.options.neos:
                     self.result = self.optimizer.solve(self.instance, opt=self.options.solver)
                 else:
+					if self.options.solver == 'cbc':
+						sym_labels = False
+						# Note: The cbc solver encounters errors when variable names exceed
+						# 100 characters. To prevent this error from occuring, we do not
+						# send symbolic variable names to the solver.
+					else:
+						sym_labels = self.options.keepPyomoLP
                     self.result = self.optimizer.solve(self.instance, suffixes=['dual'],  # 'rc', 'slack'],
                                                        keepfiles=self.options.keepPyomoLP,
-                                                       symbolic_solver_labels=self.options.keepPyomoLP)
+                                                       symbolic_solver_labels=sym_labels)
                 yield '\t\t\t\t\t\t[%8.2f]\n' % duration()
                 SE.write('\r[%8.2f]\n' % duration())
                 self.txt_file.write('[%8.2f]\n' % duration())
@@ -421,7 +428,7 @@ class TemoaSolverInstance(object):
                 SE.write('\r[%8.2f\n' % duration())
                 self.txt_file.write('[%8.2f]\n' % duration())
                 yield formatted_results.getvalue() + '\n'
-                #SO.write( formatted_results.getvalue() )
+                # SO.write( formatted_results.getvalue() )
                 self.txt_file.write(formatted_results.getvalue())
                 if formatted_results.getvalue() == 'No solution found.':
                     SE.write(formatted_results.getvalue() + '\n')
