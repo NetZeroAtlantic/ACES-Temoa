@@ -336,7 +336,7 @@ class TemoaConfig(object):
         self.output = abspath(t.value.replace('=', ' ').split()[1])
 
     def t_scenario(self, t):
-        r'--scenario[\s\=]+\w+\b'
+        r'--scenario[\s\=]+[-\\\/\:\.\~\w]+\b'
         self.scenario = t.value.replace('=', ' ').split()[1]
 
     def t_saveEXCEL(self, t):
