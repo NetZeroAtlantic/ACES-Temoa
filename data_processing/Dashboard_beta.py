@@ -605,9 +605,10 @@ class OutputPlotGenerator:
         def set_commodity_options(sector, selected_subsectors):
             _options = []
             for ss in selected_subsectors:
-                for opt in comm_options[sector][ss]:
-                    if opt not in _options:
-                        _options.append(opt)
+                if ss in comm_options[sector]:
+                    for opt in comm_options[sector][ss]:
+                        if opt not in _options:
+                            _options.append(opt)
             return [{'label': i, 'value': i} for i in _options]
 
         @app.callback(
@@ -801,9 +802,10 @@ class OutputPlotGenerator:
         def set_commodity_options(sector, selected_subsectors):
             _options = []
             for ss in selected_subsectors:
-                for opt in comm_options[sector][ss]:
-                    if opt not in _options:
-                        _options.append(opt)
+                if ss in comm_options[sector]:
+                    for opt in comm_options[sector][ss]:
+                        if opt not in _options:
+                            _options.append(opt)
             return [{'label': i, 'value': i} for i in _options]
 
         @app.callback(
