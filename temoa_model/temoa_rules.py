@@ -394,9 +394,19 @@ def PeriodCost_rule(M, p):
         for S_o in M.ProcessOutputsByInput[r, S_p, S_t, S_v, S_i]
     )
 
-    # The emissions costs occur over the five possible
-    # emission sources.
-    # First, sum over all actual emissions:
+    # In Temoa, there are five types of processes that can produce
+    # emissions:
+    # 1. Variable activity (e.g. from a dispatchable power plant)
+    # 2. Variable flex activity (e.g. from techs in the "tech_flex" set)
+    # 3. Curtailed activity.Annual activity (e.g. from techs in the "tech_annual" set)
+    # 4. Annual activity (e.g. from techs in the "tech_annual" set)
+    # 5. Annual flex activity (e.g. from techs in both the "tech_annual" and
+    #       "tech_flex" sets.)
+    #
+    # Here, we determine the the cost of emissions by adding summing over the
+    # five potentially emitting types of processes outlined above.
+
+    # 1. Variable activity
     variable_emission_costs = sum(
         M.V_FlowOut[r, p, S_s, S_d, S_i, S_t, S_v, S_o]
         * M.EmissionActivity[r, e, S_i, S_t, S_v, S_o]
@@ -416,7 +426,7 @@ def PeriodCost_rule(M, p):
         for S_s in M.time_season
         for S_d in M.time_of_day
     )
-    # Second, sum over all flex emissions
+    # 2. Variable flex activity
     variable_emission_costs += sum(
         M.V_Flex[reg, p, S_s, S_d, S_i, S_t, S_v, S_o]
         * M.EmissionActivity[r, e, S_i, S_t, S_v, S_o]
@@ -436,7 +446,7 @@ def PeriodCost_rule(M, p):
         for S_s in M.time_season
         for S_d in M.time_of_day
     )
-    # Third, sum over all curtailment emission
+    # 3. Curtailed activity
     variable_emission_costs += sum(
         M.V_Curtailment[r, p, S_s, S_d, S_i, S_t, S_v, S_o]
         * M.EmissionActivity[r, e, S_i, S_t, S_v, S_o]
@@ -458,7 +468,7 @@ def PeriodCost_rule(M, p):
         for S_d in M.time_of_day
     )
 
-    # Fourth, sum over all annual emissions
+    # 4. Annual activity
     variable_emission_costs += sum(
         M.V_FlowOutAnnual[r, p, S_i, S_t, S_v, S_o]
         * M.EmissionActivity[r, e, S_i, S_t, S_v, S_o]
@@ -476,7 +486,8 @@ def PeriodCost_rule(M, p):
         # EmissionsActivity not indexed by p, so make sure (r,p,t,v) combos valid
         if (r, p, S_t, S_v) in M.processInputs.keys()
     )
-    # Finally, sum over all flex annual emissions
+
+    # 5. Annual flex activity
     variable_emission_costs += sum(
         M.V_FlexAnnual[r, p, S_i, S_t, S_v, S_o]
         * M.EmissionActivity[r, e, S_i, S_t, S_v, S_o]
@@ -1591,15 +1602,21 @@ we write this equation for all the time-slices defined in the database in each r
         # Make sure (r,p,t,v) combinations are defined
         if (r, p, t, v) in M.activeCapacityAvailable_rptv
     )
+
     # The above code does not consider exchange techs, e.g. electricity
     # transmission between two distinct regions.
-    # We take exchange takes into account below:
+    # We take exchange takes into account below.
+    # Note that a singe exchange tech linking regions Ri and Rj is twice
+    # defined: once for region "Ri-Rj" and once for region "Rj-Ri".
+
+    # First, determine the amount of firm capacity each exchange tech
+    # contributes.
     for r1r2 in M.RegionalIndices:
         if '-' not in r1r2:
             continue
         r1, r2 = r1r2.split("-")
         # Only consider the capacity of technologies that import to
-        # the region in question -- i.e. for cases where r2 = r.
+        # the region in question -- i.e. for cases where r2 == r.
         if r2 != r:
             continue
 
@@ -1618,7 +1635,7 @@ we write this equation for all the time-slices defined in the database in each r
         )
 
     # In most Temoa input databases, demand is endogenous, so we use electricity
-    # generation instead.
+    # generation instead as a proxy for electricity demand.
     total_generation = sum(
         M.V_FlowOut[r, p, s, d, S_i, t, S_v, S_o]
         for (t, S_v) in M.processReservePeriods[r, p]
@@ -1626,23 +1643,26 @@ we write this equation for all the time-slices defined in the database in each r
         for S_o in M.ProcessOutputsByInput[r, p, t, S_v, S_i]
     )
 
-    # The above code does not consider exchange techs, e.g. electricity
-    # transmission between two distinct regions.
-    # We take exchange takes into account below:
+    # Electricity imports and exports via exchange techs are accounted
+    # for below:
     for r1r2 in M.RegionalIndices:  # ensure the region is of the form r1-r2
         if '-' not in r1r2:
             continue
         if (r1r2, p) not in M.processReservePeriods:  # ensure the technology in question exists
             continue
         r1, r2 = r1r2.split("-")
-        if r1 == r:  # these are exports. We subtract this from the tally.
+        # First, determine the exports, and subtract this value from the
+        # total generation.
+        if r1 == r:
             total_generation -= sum(
                 M.V_FlowOut[r1r2, p, s, d, S_i, t, S_v, S_o]
                 for (t, S_v) in M.processReservePeriods[r1r2, p]
                 for S_i in M.processInputs[r1r2, p, t, S_v]
                 for S_o in M.ProcessOutputsByInput[r1r2, p, t, S_v, S_i]
             )
-        elif r2 == r:  # these are imports and need to be included in the tally.
+        # Second, determine the imports, and add this value from the
+        # total generation.
+        elif r2 == r:
             total_generation += sum(
                 M.V_FlowOut[r1r2, p, s, d, S_i, t, S_v, S_o]
                 for (t, S_v) in M.processReservePeriods[r1r2, p]
@@ -1852,9 +1872,9 @@ set.
 def MaxSeasonalActivity_Constraint(M, r, p, s, t):
     r"""
 The MaxSeasonalActivity sets an upper bound on the activity from a specific technology.
-Note that the indices for these constraints are region, period, season, and tech, not tech
-and vintage. The first version of the constraint pertains to technologies with
-variable output at the time slice level, and the second version pertains to
+Note that the indices for these constraints are region, period, season, and tech.
+The first component of the constraint pertains to technologies with
+variable output at the time slice level, and the second component pertains to
 technologies with constant annual output belonging to the :code:`tech_annual`
 set.
 .. math::
@@ -1864,6 +1884,17 @@ set.
    \sum_{I,V,O} \textbf{FOA}_{r, p, i, t, v, o}  \le MAXSSNACT_{r, p, s, t}
    \forall \{r, p, s, t \in T^{a}\} \in \Theta_{\text{MaxSeasonalActivity}}
 """
+
+    # Notice that this constraint follows the implementation of the
+    # MaxActivity_Constraint(). The difference is that this function is defined
+    # over each representative day, or "season", as opposed to the entire
+    # year, or "period".
+
+    # The V_FlowOut variable is scaled by the weights of each representative day.
+    # In order to determine the daily, or "seasonal", flow, the V_FLowOut variable
+    # must be converted back to its un-scaled value. We do this by dividing the
+    # V_FlowOut value by M.SegFrac[s, d]*365*24.
+
     try:
         activity_rpst = sum(
             M.V_FlowOut[r, p, s, d, S_i, t, S_v, S_o] / (M.SegFrac[s, d]*365*24)
@@ -1873,13 +1904,13 @@ set.
             for d in M.time_of_day
         )
     except:
-        activity_rpst = sum(
-            M.V_FlowOutAnnual[r, p, S_i, t, S_v, S_o]
-            for S_v in M.processVintages[r, p, t]
-            for S_i in M.processInputs[r, p, t, S_v]
-            for S_o in M.ProcessOutputsByInput[r, p, t, S_v, S_i]
+        msg = (
+        "\nWarning: MaxSeasonalActivity constraint can not be defined for "
+        "technologies in \"tech_annual\". Continuing by ignoring the constraint "
+        "for '%s'.\n "
         )
-
+        SE.write(msg % (t))
+        return Constraint.Skip
     max_act = value(M.MaxSeasonalActivity[r, p, s, t])
     expr = activity_rpst <= max_act
     return expr
@@ -1945,6 +1976,15 @@ the :code:`tech_annual` set.
    \sum_{I,V,O} \textbf{FOA}_{r, p, s, i, t, v, o} \ge MINSSNACT_{r, p, s, t}
    \forall \{r, p, s, t \in T^{a}\} \in \Theta_{\text{MinSeasonalActivity}}
 """
+    # Notice that this constraint follows the implementation of the
+    # MinActivity_Constraint(). The difference is that this function is defined
+    # over each representative day, or "season", as opposed to the entire
+    # year, or "period".
+
+    # The V_FlowOut variable is scaled by the weights of each representative day.
+    # In order to determine the daily, or "seasonal", flow, the V_FLowOut variable
+    # must be converted back to its un-scaled value. We do this using the
+    # weighting_factor below:
 
     try:
         activity_rpst = sum(
@@ -1955,12 +1995,13 @@ the :code:`tech_annual` set.
             for d in M.time_of_day
         )
     except:
-        activity_rpst = sum(
-            M.V_FlowOutAnnual[r, p, S_i, t, S_v, S_o]
-            for S_v in M.processVintages[r, p, t]
-            for S_i in M.processInputs[r, p, t, S_v]
-            for S_o in M.ProcessOutputsByInput[r, p, t, S_v, S_i]
+        msg = (
+        "\nWarning: MinSeasonalActivity constraint can not be defined for "
+        "technologies in \"tech_annual\". Continuing by ignoring the constraint "
+        "for '%s'.\n "
         )
+        SE.write(msg % (t))
+        return Constraint.Skip
 
     min_act = value(M.MinSeasonalActivity[r, p, s, t])
     expr = activity_rpst >= min_act

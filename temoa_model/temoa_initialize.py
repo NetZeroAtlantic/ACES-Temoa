@@ -865,6 +865,8 @@ def CostInvestIndices(M):
 
 
 def CostEmissionsIndices(M):
+    # Define the indices over which the CostEmissions
+    # parameter is indexed.
     indices = set(
         (r, p, e)
 

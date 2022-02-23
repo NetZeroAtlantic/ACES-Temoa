@@ -258,7 +258,7 @@ def pformat_results(pyomo_instance, pyomo_result, options):
         svars['V_CapacityAvailableByPeriodAndTech'][r, p, t] = val
 
     # Extract the implicit emissions prices. These are equivalent to the
-        # shadow price/dual variable of the emission limit constraint.
+    # shadow price/dual variable of the emission limit constraint.
     for r, p, e in m.EmissionLimitConstraint:
         # dual variables are given as non-positive. For consistency we
         # report them as non-negative.
@@ -350,22 +350,26 @@ def pformat_results(pyomo_instance, pyomo_result, options):
             )
             svars[	'Costs'	]['V_DiscountedVariableCostsByProcess', r, t, v] += vcost
 
+        # Calculate the costs associated with emissions.
         system_emissions = svars['V_EmissionActivityByPeriodAndProcess']
         for r, p, e, t, v in system_emissions.keys():
             if (r, p, e) in m.CostEmissions.sparse_iterkeys():
+                # First, determine the amount of emissions.
                 ecost = value(system_emissions[r, p, e, t, v])
                 if ecost < epsilon:
                     continue
-
+                # Then, if the reported emissions are greater than some small number,
+                # epsilon, multiply the emissions by the cost of emissions to determine
+                # the cost/penalty.
                 ecost *= value(m.CostEmissions[r, p, e])
                 svars['Costs']['V_UndiscountedEmissionsCostsByProcess',
                                r, t, v] += ecost * value(MPL[r, p, t, v])
 
+                # Apply the discounting rule to determine the discounted cost.
                 ecost *= (
                     value(MPL[r, p, t, v]) if not GDR else
                     (x ** (P_0 - p + 1) * (1 - x ** (-value(MPL[r, p, t, v]))) / GDR)
                 )
-
                 svars['Costs']['V_DiscountedEmissionsCostsByProcess', r, t, v] += ecost
 
         # update the costs of exchange technologies.
@@ -580,9 +584,11 @@ def pformat_results(pyomo_instance, pyomo_result, options):
 									VALUES('"+options.scenario+"',"+key_str+", \
 									"+str(svars[table][key])+");")
                 elif table == 'EmissionShadowPrice':  # Second of two tables without sector info
+                    # Add the relevant entries into the EmissionShadowPrice table
+                    # in the SQLite file.
                     for key in svars[table].keys():  # Need to loop over keys (rows)
                         key_str = str(key)
-                        key_str = key_str[1:-1]  # Remove
+                        key_str = key_str[1:-1]  # Remove parentheses
                         cur.execute("INSERT INTO "+tables[table] +
                                     " VALUES('"+str(key[0])+"', '"+options.scenario+"', \
 										"+key_str[key_str.find(',')+1:]+","+str(svars[table][key])+");")
