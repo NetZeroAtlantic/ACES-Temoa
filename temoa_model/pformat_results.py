@@ -356,7 +356,7 @@ def pformat_results(pyomo_instance, pyomo_result, options):
             if (r, p, e) in m.CostEmissions.sparse_iterkeys():
                 # First, determine the amount of emissions.
                 ecost = value(system_emissions[r, p, e, t, v])
-                if ecost < epsilon:
+                if abs(ecost) < epsilon:
                     continue
                 # Then, if the reported emissions are greater than some small number,
                 # epsilon, multiply the emissions by the cost of emissions to determine
