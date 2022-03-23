@@ -515,11 +515,11 @@ class OutputPlotGenerator:
         '''
         Creates the structure of the capacity dashboard
         '''
-        regions = list(df_en.region.unique().__array__())
-        sectors = df_en.sector.unique()
-        techs = df_en.tech.unique()
-        years = df_en.t_periods.unique()
-        scenarios = df_en.scenario.unique()
+        regions = list(df_cap.region.unique().__array__())
+        sectors = df_cap.sector.unique()
+        techs = df_cap.tech.unique()
+        years = df_cap.t_periods.unique()
+        scenarios = df_cap.scenario.unique()
         subsectors = self.tech_info.subsector.unique()
         demand_comms = df_en.output_comm.unique()
 
