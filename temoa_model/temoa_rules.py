@@ -363,7 +363,7 @@ def PeriodCost_rule(M, p):
     variable_costs = sum(
         M.V_FlowOut[r, p, s, d, S_i, S_t, S_v, S_o]
         * (
-            value(M.CostVariable[r, p, S_t, S_v])
+            value(M.CostVariable[r, p, S_t, S_v]) * value(M.CostVariableVariable[r, S_t, s, d])
             * (
                 value(MPL[r, p, S_t, S_v])
                 if not GDR

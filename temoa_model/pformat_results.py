@@ -326,12 +326,13 @@ def pformat_results(pyomo_instance, pyomo_result, options):
         for r, p, t, v in m.CostVariable.sparse_iterkeys():
             if t not in m.tech_annual:
                 vcost = sum(
-                    value(m.V_FlowOut[r, p, S_s, S_d, S_i, t, v, S_o])
+                    value(m.V_FlowOut[r, p, S_s, S_d, S_i, t, v, S_o]) * value(m.CostVariableVariable[r, t, S_s, S_d])
                     for S_i in m.processInputs[r, p, t, v]
                     for S_o in m.ProcessOutputsByInput[r, p, t, v, S_i]
                     for S_s in m.time_season
                     for S_d in m.time_of_day
                 )
+
             else:
                 vcost = sum(
                     value(m.V_FlowOutAnnual[r, p, S_i, t, v, S_o])

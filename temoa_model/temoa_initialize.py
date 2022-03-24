@@ -854,6 +854,15 @@ def CostFixedIndices(M):
 def CostVariableIndices(M):
     return M.activeActivity_rptv
 
+def CostVariableVariableIndices(M):
+    rtsd = set(
+        (r, t, s, d)
+
+        for r, p, t in M.processVintages.keys() if t not in M.tech_annual
+        for s in M.time_season
+        for d in M.time_of_day
+    )
+    return rtsd
 
 def CostInvestIndices(M):
     indices = set(

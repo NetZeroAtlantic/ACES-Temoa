@@ -193,6 +193,9 @@ def temoa_create_model(name="Temoa"):
     )
     M.CostVariableVintageDefault = Param(M.CostVariableVintageDefault_rtv)
 
+    M.CostVariableVariable_rtsd = Set(dimen=4, initialize=CostVariableVariableIndices)
+    M.CostVariableVariable = Param(M.CostVariableVariable_rtsd, mutable=True, default=1.0)
+
     M.CostEmissions_rpe = Set(dimen=3, initialize=CostEmissionsIndices)
     M.CostEmissions = Param(M.CostEmissions_rpe, mutable=True, default=0.0)
 
