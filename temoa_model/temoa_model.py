@@ -142,6 +142,9 @@ def temoa_create_model(name="Temoa"):
     )
     M.validate_UsedEfficiencyIndices = BuildAction(rule=CheckEfficiencyIndices)
 
+    M.EfficiencyVariable_ritsdo = Set(dimen=6, initialize=EfficiencyVariableIndices)
+    M.EfficiencyVariable = Param(M.EfficiencyVariable_ritsdo, default=1)
+
     M.CapacityFactor_rsdtv = Set(dimen=5, initialize=CapacityFactorProcessIndices)
     M.CapacityFactorProcess = Param(M.CapacityFactor_rsdtv, mutable=True)
 
