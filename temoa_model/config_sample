@@ -1,11 +1,11 @@
 #-----------------------------------------------------
 # This is a sample configuration file for Temoa
-# It allows you to specify (and document) all run-time model options 
-# Legal chars in path: a-z A-Z 0-9 - _ \ / . : 
+# It allows you to specify (and document) all run-time model options
+# Legal chars in path: a-z A-Z 0-9 - _ \ / . :
 # Comment out non-mandatory options to omit them
 #-----------------------------------------------------
 
-# Input File (Mandatory) 
+# Input File (Mandatory)
 # Input can be a .sqlite or .dat file
 # Both relative path and absolute path are accepted
 --input=data_files/temoa_utopia.sqlite
@@ -14,7 +14,7 @@
 # The output file must be a existing .sqlite file
 --output=data_files/temoa_utopia.sqlite
 
-# Scenario Name (Mandatory) 
+# Scenario Name (Mandatory)
 # This scenario name is used to store results within the output .sqlite file
 --scenario=test_run
 
@@ -29,8 +29,11 @@
 #--myopic_periods=2
 #--keep_myopic_databases
 
+# Report Duals (Optional)
+# Store Duals results in the output .sqlite file
+#--saveDUALS
 
-# Spreadsheet Output (Optional) 
+# Spreadsheet Output (Optional)
 # Direct model output to a spreadsheet
 # Scenario name specified above is used to name the spreadsheet
 --saveEXCEL
