@@ -888,7 +888,7 @@ def CostEmissionsIndices(M):
     return indices
 
 
-def RegionalEmissionLimitIndices(M):
+def RegionalGlobalInitializedIndices ( M ):
     from itertools import permutations
     indices = set()
     for n in range(1, len(M.regions)+1):
