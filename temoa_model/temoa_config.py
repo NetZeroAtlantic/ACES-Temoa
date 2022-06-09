@@ -113,14 +113,14 @@ def db_2_dat(ifile, ofile, options):
         ['set',  'time_periods',              'time_future',         'f',            0],
         ['set',  'time_season',               '',                    '',             0],
         ['set',  'time_of_day',               '',                    '',             0],
-        ['set',  'regions',        	          '',                    '',             0],
+        ['set',  'regions',                      '',                    '',             0],
         ['set',  'tech_curtailment',          '',                    '',             0],
-        ['set',  'tech_flex',          		  '',                    '',             0],
+        ['set',  'tech_flex',                    '',                    '',             0],
         ['set',  'tech_reserve',              '',                    '',             0],
         ['set',  'technologies',              'tech_resource',       'r',            0],
         ['set',  'technologies',              'tech_production',    ['p', 'pb', 'ps'], 0],
         ['set',  'technologies',              'tech_baseload',       'pb',           0],
-        ['set',  'technologies',              'tech_storage',  		 'ps',           0],
+        ['set',  'technologies',              'tech_storage',           'ps',           0],
         ['set',  'tech_ramping',              '',                    '',             0],
         ['set',  'tech_exchange',             '',                    '',             0],
         ['set',  'commodities',               'commodity_physical',  'p',            0],
@@ -266,7 +266,7 @@ class TemoaConfig(object):
         self.myopic = False
         self.myopic_periods = 0
         self.KeepMyopicDBs = False
-        self.saveDUALS     	  = False
+        self.saveDUALS           = False
         self.saveTEXTFILE = False
         self.how_to_cite = None
         self.version = False
@@ -348,8 +348,8 @@ class TemoaConfig(object):
         self.saveEXCEL = True
 
     def t_saveDUALS(self, t):
-		r'--saveDUALS\b'
-		self.saveDUALS = True
+        r'--saveDUALS\b'
+        self.saveDUALS = True
 
     def t_myopic(self, t):
         r'--myopic\b'

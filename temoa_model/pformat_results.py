@@ -121,8 +121,8 @@ def pformat_results(pyomo_instance, pyomo_result, options):
             duals.index.name = 'constraint_name'
             duals = duals.to_frame()
             if hasattr(options, 'scenario'):
-				duals.loc[:,'scenario'] = options.scenario
-				return duals
+                duals.loc[:,'scenario'] = options.scenario
+                return duals
 
     # Create a dictionary in which to store "solved" variable values
     svars = defaultdict(lambda: defaultdict(float))
@@ -298,7 +298,7 @@ def pformat_results(pyomo_instance, pyomo_result, options):
                     1 - x**(-value(m.LifetimeProcess[r, t, v]))
                 )
             )
-            svars[	'Costs'	]['V_UndiscountedInvestmentByProcess', r, t, v] += icost
+            svars[    'Costs'    ]['V_UndiscountedInvestmentByProcess', r, t, v] += icost
 
             icost *= value(m.LoanAnnualize[r, t, v])
             icost *= (
@@ -306,7 +306,7 @@ def pformat_results(pyomo_instance, pyomo_result, options):
                 (x ** (P_0 - v + 1) * (1 - x ** (-value(LLN[r, t, v]))) / GDR)
             )
 
-            svars[	'Costs'	]['V_DiscountedInvestmentByProcess', r, t, v] += icost
+            svars[    'Costs'    ]['V_DiscountedInvestmentByProcess', r, t, v] += icost
 
         for r, p, t, v in m.CostFixed.sparse_iterkeys():
             fcost = value(m.V_Capacity[r, t, v])
@@ -314,7 +314,7 @@ def pformat_results(pyomo_instance, pyomo_result, options):
                 continue
 
             fcost *= value(m.CostFixed[r, p, t, v])
-            svars[	'Costs'	]['V_UndiscountedFixedCostsByProcess',
+            svars[    'Costs'    ]['V_UndiscountedFixedCostsByProcess',
                              r, t, v] += fcost * value(MPL[r, p, t, v])
 
             fcost *= (
@@ -322,7 +322,7 @@ def pformat_results(pyomo_instance, pyomo_result, options):
                 (x ** (P_0 - p + 1) * (1 - x ** (-value(MPL[r, p, t, v]))) / GDR)
             )
 
-            svars[	'Costs'	]['V_DiscountedFixedCostsByProcess', r, t, v] += fcost
+            svars[    'Costs'    ]['V_DiscountedFixedCostsByProcess', r, t, v] += fcost
 
         for r, p, t, v in m.CostVariable.sparse_iterkeys():
             if t not in m.tech_annual:
@@ -344,13 +344,13 @@ def pformat_results(pyomo_instance, pyomo_result, options):
                 continue
 
             vcost *= value(m.CostVariable[r, p, t, v])
-            svars[	'Costs'	]['V_UndiscountedVariableCostsByProcess',
+            svars[    'Costs'    ]['V_UndiscountedVariableCostsByProcess',
                              r, t, v] += vcost * value(MPL[r, p, t, v])
             vcost *= (
                 value(MPL[r, p, t, v]) if not GDR else
                 (x ** (P_0 - p + 1) * (1 - x ** (-value(MPL[r, p, t, v]))) / GDR)
             )
-            svars[	'Costs'	]['V_DiscountedVariableCostsByProcess', r, t, v] += vcost
+            svars[    'Costs'    ]['V_DiscountedVariableCostsByProcess', r, t, v] += vcost
 
         # Calculate the costs associated with emissions.
         system_emissions = svars['V_EmissionActivityByPeriodAndProcess']
@@ -418,29 +418,29 @@ def pformat_results(pyomo_instance, pyomo_result, options):
                                      for S_o in m.ProcessOutputsByInput[reg_dir2, p, tech, vintage, S_i]
                                      ))
 
-            for item in list(svars[	'Costs'	]):
+            for item in list(svars[    'Costs'    ]):
                 if item[2] == tech:
                     opposite_dir = item[1][item[1].find("-")+1:]+"-"+item[1][:item[1].find("-")]
-                    if (item[0], opposite_dir, item[2], item[3]) in svars[	'Costs'	].keys():
-                        # if both directional entries are already in svars[	'Costs'	], they're left intact.
+                    if (item[0], opposite_dir, item[2], item[3]) in svars[    'Costs'    ].keys():
+                        # if both directional entries are already in svars[    'Costs'    ], they're left intact.
                         continue
                     if item[1] == reg_dir1:
                         if (act_dir1+act_dir2) > 0:
-                            svars[	'Costs'	][(item[0], reg_dir2, item[2], item[3])
-                                             ] = svars[	'Costs'	][item] * act_dir2 / (act_dir1 + act_dir2)
-                            svars[	'Costs'	][item] = svars[	'Costs'	][item] * \
+                            svars[    'Costs'    ][(item[0], reg_dir2, item[2], item[3])
+                                             ] = svars[    'Costs'    ][item] * act_dir2 / (act_dir1 + act_dir2)
+                            svars[    'Costs'    ][item] = svars[    'Costs'    ][item] * \
                                 act_dir1 / (act_dir1 + act_dir2)
 
         # Remove Ri-Rj entries from being populated in the Outputs_Costs. Ri-Rj means a cost
         # for region Rj
-        for item in list(svars[	'Costs'	]):
+        for item in list(svars[    'Costs'    ]):
             if item[2] in m.tech_exchange:
-                svars[	'Costs'	][(item[0], item[1][item[1].find("-")+1:],
-                                  item[2], item[3])] = svars[	'Costs'	][item]
-                del svars[	'Costs'	][item]
+                svars[    'Costs'    ][(item[0], item[1][item[1].find("-")+1:],
+                                  item[2], item[3])] = svars[    'Costs'    ][item]
+                del svars[    'Costs'    ][item]
 
         if options.saveDUALS:
-		          duals = collect_result_data( Cons, con_info, epsilon=1e-9 )
+                  duals = collect_result_data( Cons, con_info, epsilon=1e-9 )
 
     msg = ('Model name: %s\n'
            'Objective function value (%s): %s\n'
@@ -578,14 +578,14 @@ def pformat_results(pyomo_instance, pyomo_result, options):
                     # before the run in temoa_config.py)
                     if hasattr(options, 'file_location') and options.scenario == val[0] and os.path.join('temoa_model', 'config_sample_myopic') not in options.file_location:
                         cur.execute("DELETE FROM "+tables[table]+" \
-									WHERE scenario is '"+options.scenario+"'")
+                                    WHERE scenario is '"+options.scenario+"'")
                 if table == 'Objective':  # First of two tables without sector info
                     for key in svars[table].keys():
                         key_str = str(key)  # only 1 row to write
                         key_str = key_str[1:-1]  # Remove parentheses
                         cur.execute("INSERT INTO "+tables[table]+" \
-									VALUES('"+options.scenario+"',"+key_str+", \
-									"+str(svars[table][key])+");")
+                                    VALUES('"+options.scenario+"',"+key_str+", \
+                                    "+str(svars[table][key])+");")
                 elif table == 'EmissionShadowPrice':  # Second of two tables without sector info
                     # Add the relevant entries into the EmissionShadowPrice table
                     # in the SQLite file.
@@ -594,7 +594,7 @@ def pformat_results(pyomo_instance, pyomo_result, options):
                         key_str = key_str[1:-1]  # Remove parentheses
                         cur.execute("INSERT INTO "+tables[table] +
                                     " VALUES('"+str(key[0])+"', '"+options.scenario+"', \
-										"+key_str[key_str.find(',')+1:]+","+str(svars[table][key])+");")
+                                        "+key_str[key_str.find(',')+1:]+","+str(svars[table][key])+");")
                 else:  # First add 'NULL' for sector then update
                     for key in svars[table].keys():  # Need to loop over keys (rows)
                         key_str = str(key)
@@ -602,24 +602,24 @@ def pformat_results(pyomo_instance, pyomo_result, options):
                         if table != 'Costs':
                             cur.execute("INSERT INTO "+tables[table] +
                                         " VALUES('"+str(key[0])+"', '"+options.scenario+"','NULL', \
-											"+key_str[key_str.find(',')+1:]+","+str(svars[table][key])+");")
+                                            "+key_str[key_str.find(',')+1:]+","+str(svars[table][key])+");")
                         else:
                             key_str = str((key[0], key[2], key[3]))
                             key_str = key_str[1:-1]  # Remove parentheses
                             cur.execute("INSERT INTO "+tables[table] +
                                         " VALUES('"+str(key[1])+"', '"+options.scenario+"','NULL', \
-										"+key_str+","+str(svars[table][key])+");")
+                                        "+key_str+","+str(svars[table][key])+");")
                     cur.execute("UPDATE "+tables[table]+" SET sector = \
-								(SELECT technologies.sector FROM technologies \
-								WHERE "+tables[table]+".tech = technologies.tech);")
+                                (SELECT technologies.sector FROM technologies \
+                                WHERE "+tables[table]+".tech = technologies.tech);")
 
         # WRITE DUALS RESULTS
         if options.saveDUALS:
-    			overwrite_keys = [str(tuple(x)) for x in duals.reset_index()[['constraint_name','scenario']].to_records(index=False)]
-    			#delete records that will be overwritten by new duals dataframe
-    			cur.execute("DELETE FROM Output_Duals WHERE (constraint_name, scenario) IN (VALUES " + ','.join(overwrite_keys) + ")")
-    			#write new records from new duals dataframe
-    			duals.to_sql('Output_Duals',con, if_exists='append')
+                overwrite_keys = [str(tuple(x)) for x in duals.reset_index()[['constraint_name','scenario']].to_records(index=False)]
+                #delete records that will be overwritten by new duals dataframe
+                cur.execute("DELETE FROM Output_Duals WHERE (constraint_name, scenario) IN (VALUES " + ','.join(overwrite_keys) + ")")
+                #write new records from new duals dataframe
+                duals.to_sql('Output_Duals',con, if_exists='append')
 
 
 
@@ -642,8 +642,8 @@ def pformat_results(pyomo_instance, pyomo_result, options):
                 # make_excel function imported near the top
                 make_excel(options.output, new_dir+os.sep+options.scenario, temp_scenario)
                 # os.system("python data_processing"+os.sep+"DB_to_Excel.py -i \
-                #		  ""+options.output+" \
-                #		  " -o data_files"+os.sep+options.scenario+" -s "+options.scenario)
+                #          ""+options.output+" \
+                #          " -o data_files"+os.sep+options.scenario+" -s "+options.scenario)
 
     return output
 
@@ -673,7 +673,7 @@ def dat_to_db(input_file, output_schema, run_partial=False):
         return result_string
 
     # Code Starts here
-    tables_single_value = [	'time_exist', 'time_future', 'time_season', 'time_of_day',
+    tables_single_value = [    'time_exist', 'time_future', 'time_season', 'time_of_day',
                             'tech_baseload', 'tech_resource', 'tech_production', 'tech_storage',
                             'commodity_physical', 'commodity_demand', 'commodity_emissions']
 
@@ -687,10 +687,10 @@ def dat_to_db(input_file, output_schema, run_partial=False):
     parsed_data = {}
 
     # if db_or_dat_flag: #This is an input db file
-    #	import pdb; pdb.set_trace()
-    #	output_schema.execute("ATTACH DATABASE ? AS db2;", "'"+input_file+"'")
-    #	for i in db_tables:
-    #		output_schema.execute("INSERT INTO "+i+" SELECT * FROM db2."+i+";")
+    #    import pdb; pdb.set_trace()
+    #    output_schema.execute("ATTACH DATABASE ? AS db2;", "'"+input_file+"'")
+    #    for i in db_tables:
+    #        output_schema.execute("INSERT INTO "+i+" SELECT * FROM db2."+i+";")
 
     if run_partial:
         comm_set = set()
