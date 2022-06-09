@@ -232,6 +232,7 @@ def temoa_create_model(name="Temoa"):
     M.EmploymentPerCapacity = Param(M.Employment_rptv, mutable=True)
 
     # Define parameters associated with user-defined constraints
+    M.RegionalGlobalIndices = Set(initialize=RegionalGlobalInitializedIndices)
     M.MinCapacity = Param(M.RegionalIndices, M.time_optimize, M.tech_all)
     M.MaxCapacity = Param(M.RegionalIndices, M.time_optimize, M.tech_all)
     M.MaxResource = Param(M.RegionalIndices, M.tech_all)
@@ -243,8 +244,8 @@ def temoa_create_model(name="Temoa"):
     M.MinSeasonalActivity = Param(M.RegionalIndices, M.time_optimize, M.time_season, M.tech_all)
     M.GrowthRateMax = Param(M.RegionalIndices, M.tech_all)
     M.GrowthRateSeed = Param(M.RegionalIndices, M.tech_all)
-    M.RegionalEmissionLimit = Set(initialize=RegionalEmissionLimitIndices)
     M.EmissionLimit = Param(M.RegionalGlobalIndices, M.time_optimize, M.commodity_emissions)
+    M.EmissionActivity_reitvo = Set(dimen=6, initialize=EmissionActivityIndices)
     M.EmissionActivity = Param(M.EmissionActivity_reitvo)
     M.MinGenGroupWeight = Param(M.RegionalIndices, M.tech_groups, M.groups, default=0)
     M.MinGenGroupTarget = Param(M.time_optimize, M.groups)
