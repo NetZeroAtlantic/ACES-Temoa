@@ -1,3 +1,27 @@
+# Introduction
+
+Hi! Welcome to the ACES-Temoa repository. This repo contains the code behind
+the Atlantic Canada Energy System (ACES) Model, which is based off the [Temoa](https://temoacloud.com/)
+modelling suite. In fact, this repository is simply a clone of the Temoa [GitHub repository](https://github.com/TemoaProject/temoa)
+repository. The clone was made on January 1, 2022. This was done to allow us to make code
+additions specific to the Atlantic Canadian context that did not exist in the core Temoa code. 
+
+Please take a look at the [commit history](https://github.com/SutubraResearch/ACES-Temoa/commits/energysystem) for a summary of 
+the changes made to the core Temoa code. We've done our best to pull in recent commits from Temoa 
+when it makes sense to. Any commit in our commit history pulled in from the core Temoa repository
+is marked with "(copy)" in its title. A link to the original commit is available in the commit
+message. Any commit without "(copy)" in its title is unique to this repositroy. 
+
+This is one of three repositories related to the ACES Model. The others are:
+- The [ACES-Data](https://github.com/SutubraResearch/ACES-Data) repository contains the data files
+associated with the ACES Model.
+- The [ACES-Dashboard](https://github.com/SutubraResearch/ACES-Dashboard) repository contains the files
+associated with the data visualization dashboard.
+
+We use distinct repositories to separate the distinct software elements of the project. 
+
+The remainder of this README is from the original Temoa repository. 
+
 # Overview
 
 The 'energysystem' branch is the current master branch of
