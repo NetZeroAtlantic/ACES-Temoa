@@ -2071,6 +2071,23 @@ refers to the :code:`MinGenGroupTarget` parameter.
     return expr
 
 
+def MaxNewCapacity_Constraint(M, r, p, t):
+    r"""
+
+The MaxNewCapacity constraint sets a limit on the maximum newly installed capacity of a
+given technology in a given year. Note that the indices for these constraints are region,
+period and tech.
+
+.. math::
+   :label: MaxNewCapacity
+
+   \textbf{CAP}_{r, t, p} \le MAX_{r, p, t}
+
+"""
+    max_cap = value(M.MaxNewCapacity[r, p, t])
+    expr = M.V_Capacity[r, t, p] <= max_cap
+    return expr
+
 def MaxCapacity_Constraint(M, r, p, t):
     r"""
 
@@ -2143,6 +2160,22 @@ specified in the :code:`tech_capacity_max` subset.
     expr = aggcap <= max_cap
     return expr
 
+def MinNewCapacity_Constraint(M, r, p, t):
+    r"""
+
+The MinNewCapacity constraint sets a limit on the minimum newly installed capacity of a
+given technology in a given year. Note that the indices for these constraints are region,
+period, and tech.
+
+.. math::
+   :label: MaxMinCapacity
+
+   \textbf{CAP}_{r, t, p} \ge MIN_{r, p, t}
+
+"""
+    min_cap = value(M.MinNewCapacity[r, p, t])
+    expr = M.V_Capacity[r, t, p] >= min_cap
+    return expr
 
 def MinCapacity_Constraint(M, r, p, t):
     r"""
