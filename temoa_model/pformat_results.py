@@ -117,7 +117,7 @@ def pformat_results(pyomo_instance, pyomo_result, options):
         if 'Dual' in supp_outputs_df.columns:
             duals = supp_outputs_df['Dual'].copy()
             duals = -duals
-            duals = duals[duals > epsilon]
+            duals = duals[abs(duals) > epsilon]
             duals.index.name = 'constraint_name'
             duals = duals.to_frame()
             if hasattr(options, 'scenario'):
