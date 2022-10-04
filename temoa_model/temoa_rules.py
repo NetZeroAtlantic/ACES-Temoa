@@ -2177,7 +2177,6 @@ that no less than 10% of new LDV purchases in a given year must be of a certain 
     min_cap_share = value(M.MinNewCapacityShare[r, p, t, g])
 
     expr = capacity_t >= min_cap_share * capacity_group
-    print('\n\n\n',expr)
     return expr
 
 
@@ -2201,7 +2200,6 @@ that no more than 10% of LDV purchases in a given year must be of a certain type
     max_cap_share = value(M.MaxNewCapacityShare[r, p, t, g])
 
     expr = capacity_t <= max_cap_share * capacity_group
-    print('\n\n\n',expr)
     return expr
 
 
@@ -2283,15 +2281,15 @@ constraints are region and tech.
     return expr
 
 
-def MaxCapacitySet_Constraint(M, p):
+def MaxCapacityGroup_Constraint(M, r, p, g):
     r"""
-Similar to the :code:`MaxCapacity` constraint, but works on a group of technologies
-specified in the :code:`tech_capacity_max` subset.
+Similar to the :code:`MaxCapacity` constraint, but works on a group of technologies.
 
 """
-    max_cap = value(M.MaxCapacitySum[p])
+    max_cap = value(M.MaxCapacityGroup[r, p, g])
     aggcap = sum(
-        M.V_CapacityAvailableByPeriodAndTech[p, t] for t in M.tech_capacity_max
+        M.V_CapacityAvailableByPeriodAndTech[r, p, t]
+        for _r, _g, t in M.tech_groups if _r == r and _g == g and (r, p, t) in M.V_CapacityAvailableByPeriodAndTech.keys()
     )
     expr = aggcap <= max_cap
     return expr
@@ -2332,15 +2330,15 @@ tech, not tech and vintage.
     return expr
 
 
-def MinCapacitySet_Constraint(M, p):
+def MinCapacityGroup_Constraint(M, r, p, g):
     r"""
-Similar to the :code:`MinCapacity` constraint, but works on a group of technologies
-specified in the :code:`tech_capacity_min` subset.
+Similar to the :code:`MinCapacity` constraint, but works on a group of technologies.
 
 """
-    min_cap = value(M.MinCapacitySum[p])
+    min_cap = value(M.MinCapacityGroup[r, p, g])
     aggcap = sum(
-        M.V_CapacityAvailableByPeriodAndTech[p, t] for t in M.tech_capacity_min
+        M.V_CapacityAvailableByPeriodAndTech[r, p, t]
+        for _r, _g, t in M.tech_groups if _r == r and _g == g and (r, p, t) in M.V_CapacityAvailableByPeriodAndTech.keys()
     )
     expr = aggcap >= min_cap
     return expr
