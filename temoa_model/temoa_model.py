@@ -260,6 +260,8 @@ def temoa_create_model(name="Temoa"):
     M.MinCapShare_rptg = Set(dimen=4, initialize=MinCapShareIndices)
     M.MinCapacityShare = Param(M.MinCapShare_rptg)
     M.MaxCapacityShare = Param(M.MinCapShare_rptg)
+    M.MinNewCapacityShare = Param(M.MinCapShare_rptg)
+    M.MaxNewCapacityShare = Param(M.MinCapShare_rptg)
     M.LinkedTechs = Param(M.RegionalIndices, M.tech_all, M.commodity_emissions)
 
     # Define parameters associated with electric sector operation
@@ -569,6 +571,20 @@ def temoa_create_model(name="Temoa"):
     )
     M.MaxCapacityShareConstraint = Constraint(
         M.MaxCapacityShareConstraint_rptg, rule=MaxCapacityShare_Constraint
+    )
+
+    M.MinNewCapacityShareConstraint_rptg = Set(
+        dimen=4, initialize=lambda M: M.MinNewCapacityShare.sparse_iterkeys()
+    )
+    M.MinNewCapacityShareConstraint = Constraint(
+        M.MinNewCapacityShareConstraint_rptg, rule=MinNewCapacityShare_Constraint
+    )
+
+    M.MaxNewCapacityShareConstraint_rptg = Set(
+        dimen=4, initialize=lambda M: M.MaxNewCapacityShare.sparse_iterkeys()
+    )
+    M.MaxNewCapacityShareConstraint = Constraint(
+        M.MaxNewCapacityShareConstraint_rptg, rule=MaxNewCapacityShare_Constraint
     )
 
     M.MinCapacitySetConstraint_rp = Set(

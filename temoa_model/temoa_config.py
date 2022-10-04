@@ -156,6 +156,8 @@ def db_2_dat(ifile, ofile, options):
         ['param', 'MaxActivityGroup',          '',                    '',             3],
         ['param', 'MinCapacityShare',          '',                    '',             4],
         ['param', 'MaxCapacityShare',          '',                    '',             4],
+        ['param', 'MinNewCapacityShare',       '',                    '',             4],
+        ['param', 'MaxNewCapacityShare',       '',                    '',             4],
         ['param', 'MaxResource',               '',                    '',             2],
         ['param', 'GrowthRateMax',             '',                    '',             2],
         ['param', 'GrowthRateSeed',            '',                    '',             2],

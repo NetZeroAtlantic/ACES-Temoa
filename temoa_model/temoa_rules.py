@@ -2126,7 +2126,7 @@ that no less than 10% of LDVs must be of a certain type.
     capacity_group = sum(
         M.V_CapacityAvailableByPeriodAndTech[r, p, S_t]
             for (S_r, S_g, S_t) in M.tech_groups.keys()
-            if S_r == r and S_g == g
+            if S_r == r and S_g == g and (r, p, S_t) in M.processVintages.keys()
     )
     min_cap_share = value(M.MinCapacityShare[r, p, t, g])
 
@@ -2149,12 +2149,61 @@ that no more than 10% of LDVs must be of a certain type.
     capacity_group = sum(
         M.V_CapacityAvailableByPeriodAndTech[r, p, S_t]
             for (S_r, S_g, S_t) in M.tech_groups.keys()
-            if S_r == r and S_g == g
+            if S_r == r and S_g == g and (r, p, S_t) in M.processVintages.keys()
     )
     max_cap_share = value(M.MaxCapacityShare[r, p, t, g])
 
     expr = capacity_t <= max_cap_share * capacity_group
     return expr
+
+
+def MinNewCapacityShare_Constraint(M, r, p, t, g):
+    r"""
+
+The MinNewCapacityShare constraint sets a minimum new capacity share for a given
+technology within a technology groups to which it belongs.
+
+For instance, you might define a tech_group of light-duty vehicles, whose
+members are different types for LDVs. This constraint could be used to enforce
+that no less than 10% of new LDV purchases in a given year must be of a certain type.
+"""
+
+    capacity_t = M.V_Capacity[r, t, p]
+    capacity_group = sum(
+        M.V_Capacity[r, S_t, p]
+            for (S_r, S_g, S_t) in M.tech_groups.keys()
+            if S_r == r and S_g == g and (r, S_t, p) in M.V_Capacity.keys()
+    )
+    min_cap_share = value(M.MinNewCapacityShare[r, p, t, g])
+
+    expr = capacity_t >= min_cap_share * capacity_group
+    print('\n\n\n',expr)
+    return expr
+
+
+def MaxNewCapacityShare_Constraint(M, r, p, t, g):
+    r"""
+
+The MaxCapacityShare constraint sets a maximum new capacity share for a given
+technology within a technology groups to which it belongs.
+
+For instance, you might define a tech_group of light-duty vehicles, whose
+members are different types for LDVs. This constraint could be used to enforce
+that no more than 10% of LDV purchases in a given year must be of a certain type.
+"""
+
+    capacity_t = M.V_Capacity[r, t, p]
+    capacity_group = sum(
+        M.V_Capacity[r, S_t, p]
+            for (S_r, S_g, S_t) in M.tech_groups.keys()
+            if S_r == r and S_g == g and (r, S_t, p) in M.V_Capacity.keys()
+    )
+    max_cap_share = value(M.MaxNewCapacityShare[r, p, t, g])
+
+    expr = capacity_t <= max_cap_share * capacity_group
+    print('\n\n\n',expr)
+    return expr
+
 
 
 
