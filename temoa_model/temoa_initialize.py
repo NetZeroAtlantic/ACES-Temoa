@@ -920,6 +920,15 @@ def EmissionActivityIndices(M):
 
     return indices
 
+def MinCapShareIndices(M):
+    indices = set(
+        (r, p, t, g)
+        for g in M.groups
+        for r, p, t in M.processVintages.keys() if (r, g, t) in M.tech_groups
+    )
+
+    return indices
+
 
 def EnergyConsumptionByPeriodInputAndTechVariableIndices(M):
     indices = set(

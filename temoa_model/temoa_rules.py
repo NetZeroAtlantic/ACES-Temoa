@@ -2111,6 +2111,53 @@ refers to the :code:`MaxActivityGroup` parameter.
     return expr
 
 
+def MinCapacityShare_Constraint(M, r, p, t, g):
+    r"""
+
+The MinCapacityShare constraint sets a minimum capacity share for a given
+technology within a technology groups to which it belongs.
+
+For instance, you might define a tech_group of light-duty vehicles, whose
+members are different types for LDVs. This constraint could be used to enforce
+that no less than 10% of LDVs must be of a certain type.
+"""
+
+    capacity_t = M.V_CapacityAvailableByPeriodAndTech[r, p, t]
+    capacity_group = sum(
+        M.V_CapacityAvailableByPeriodAndTech[r, p, S_t]
+            for (S_r, S_g, S_t) in M.tech_groups.keys()
+            if S_r == r and S_g == g
+    )
+    min_cap_share = value(M.MinCapacityShare[r, p, t, g])
+
+    expr = capacity_t >= min_cap_share * capacity_group
+    return expr
+
+
+def MaxCapacityShare_Constraint(M, r, p, t, g):
+    r"""
+
+The MaxCapacityShare constraint sets a maximum capacity share for a given
+technology within a technology groups to which it belongs.
+
+For instance, you might define a tech_group of light-duty vehicles, whose
+members are different types for LDVs. This constraint could be used to enforce
+that no more than 10% of LDVs must be of a certain type.
+"""
+
+    capacity_t = M.V_CapacityAvailableByPeriodAndTech[r, p, t]
+    capacity_group = sum(
+        M.V_CapacityAvailableByPeriodAndTech[r, p, S_t]
+            for (S_r, S_g, S_t) in M.tech_groups.keys()
+            if S_r == r and S_g == g
+    )
+    max_cap_share = value(M.MaxCapacityShare[r, p, t, g])
+
+    expr = capacity_t <= max_cap_share * capacity_group
+    return expr
+
+
+
 def MaxNewCapacity_Constraint(M, r, p, t):
     r"""
 
