@@ -2344,6 +2344,114 @@ Similar to the :code:`MinCapacity` constraint, but works on a group of technolog
     return expr
 
 
+
+def MinAnnualCapacityFactor_Constraint(M, r, p, t):
+    r"""
+
+The MinAnnualCapacityFactor sets a lower bound on the annual capacity factor
+from a specific technology. The first version of the constraint pertains to
+technologies with variable output at the time slice level, and the second version
+pertains to technologies with constant annual output belonging to the
+:code:`tech_annual` set.
+
+.. math::
+   :label: MinAnnualCapacityFactor
+
+   \sum_{S,D,I,V,O} \textbf{FO}_{r, p, s, d, i, t, v, o} \ge MINCF_{r, p, t} * \textbf{CAPAVL}_{r, p, t} * \text{C2A}_{r, t}
+
+   \forall \{r, p, t\} \in \Theta_{\text{MinAnnualCapacityFactor}}
+
+   \sum_{I,V,O} \textbf{FOA}_{r, p, i, t, v, o} \ge MINCF_{r, p, t} * \textbf{CAPAVL}_{r, p, t} * \text{C2A}_{r, t}
+
+   \forall \{r, p, t \in T^{a}\} \in \Theta_{\text{MinAnnualCapacityFactor}}
+
+"""
+    # r can be an individual region (r='US'), or a combination of regions separated by comma (r='Mexico,US,Canada'), or 'global'.
+    # if r == 'global', the constraint is system-wide
+    if r == 'global':
+      reg = M.regions
+    else:
+      reg = [r]
+
+    try:
+        activity_rpt = sum(
+            M.V_FlowOut[r, p, s, d, S_i, t, S_v, S_o]
+            for r in reg if ',' not in r
+            for S_v in M.processVintages[r, p, t]
+            for S_i in M.processInputs[r, p, t, S_v]
+            for S_o in M.ProcessOutputsByInput[r, p, t, S_v, S_i]
+            for s in M.time_season
+            for d in M.time_of_day
+        )
+    except:
+        activity_rpt = sum(
+            M.V_FlowOutAnnual[r, p, S_i, t, S_v, S_o]
+            for r in reg if ',' not in r
+            for S_v in M.processVintages[r, p, t]
+            for S_i in M.processInputs[r, p, t, S_v]
+            for S_o in M.ProcessOutputsByInput[r, p, t, S_v, S_i]
+        )
+
+    max_possible_activity_rpt = M.V_CapacityAvailableByPeriodAndTech[r, p, t] * M.CapacityToActivity[r, t]
+    min_annual_cf = value(M.MinAnnualCapacityFactor[r, p, t])
+    expr = activity_rpt >= min_annual_cf * max_possible_activity_rpt
+    return expr
+
+
+def MaxAnnualCapacityFactor_Constraint(M, r, p, t):
+        r"""
+
+    The MaxAnnualCapacityFactor sets an upper bound on the annual capacity factor
+    from a specific technology. The first version of the constraint pertains to
+    technologies with variable output at the time slice level, and the second version
+    pertains to technologies with constant annual output belonging to the
+    :code:`tech_annual` set.
+
+    .. math::
+       :label: MaxAnnualCapacityFactor
+
+       \sum_{S,D,I,V,O} \textbf{FO}_{r, p, s, d, i, t, v, o} \le MAXCF_{r, p, t} * \textbf{CAPAVL}_{r, p, t} * \text{C2A}_{r, t}
+
+       \forall \{r, p, t\} \in \Theta_{\text{MaxAnnualCapacityFactor}}
+
+       \sum_{I,V,O} \textbf{FOA}_{r, p, i, t, v, o} \ge MAXCF_{r, p, t} * \textbf{CAPAVL}_{r, p, t} * \text{C2A}_{r, t}
+
+       \forall \{r, p, t \in T^{a}\} \in \Theta_{\text{MaxAnnualCapacityFactor}}
+
+    """
+        # r can be an individual region (r='US'), or a combination of regions separated by comma (r='Mexico,US,Canada'), or 'global'.
+        # if r == 'global', the constraint is system-wide
+        if r == 'global':
+          reg = M.regions
+        else:
+          reg = [r]
+
+        try:
+            activity_rpt = sum(
+                M.V_FlowOut[r, p, s, d, S_i, t, S_v, S_o]
+                for r in reg if ',' not in r
+                for S_v in M.processVintages[r, p, t]
+                for S_i in M.processInputs[r, p, t, S_v]
+                for S_o in M.ProcessOutputsByInput[r, p, t, S_v, S_i]
+                for s in M.time_season
+                for d in M.time_of_day
+            )
+        except:
+            activity_rpt = sum(
+                M.V_FlowOutAnnual[r, p, S_i, t, S_v, S_o]
+                for r in reg if ',' not in r
+                for S_v in M.processVintages[r, p, t]
+                for S_i in M.processInputs[r, p, t, S_v]
+                for S_o in M.ProcessOutputsByInput[r, p, t, S_v, S_i]
+            )
+
+        max_possible_activity_rpt = M.V_CapacityAvailableByPeriodAndTech[r, p, t] * M.CapacityToActivity[r, t]
+        max_annual_cf = value(M.MaxAnnualCapacityFactor[r, p, t])
+        expr = activity_rpt <= max_annual_cf * max_possible_activity_rpt
+        return expr
+
+
+
 def TechInputSplit_Constraint(M, r, p, s, d, i, t, v):
     r"""
 Allows users to specify fixed or minimum shares of commodity inputs to a process

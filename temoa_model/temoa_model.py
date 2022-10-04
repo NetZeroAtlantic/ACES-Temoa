@@ -262,6 +262,8 @@ def temoa_create_model(name="Temoa"):
     M.MaxCapacityShare = Param(M.MinCapShare_rptg)
     M.MinNewCapacityShare = Param(M.MinCapShare_rptg)
     M.MaxNewCapacityShare = Param(M.MinCapShare_rptg)
+    M.MinAnnualCapacityFactor = Param(M.RegionalGlobalIndices, M.time_optimize, M.tech_all)
+    M.MaxAnnualCapacityFactor = Param(M.RegionalGlobalIndices, M.time_optimize, M.tech_all)
     M.LinkedTechs = Param(M.RegionalIndices, M.tech_all, M.commodity_emissions)
 
     # Define parameters associated with electric sector operation
@@ -593,6 +595,21 @@ def temoa_create_model(name="Temoa"):
     M.MinCapacityGroupConstraint = Constraint(
         M.MinCapacityGroupConstraint_rpg, rule=MinCapacityGroup_Constraint
     )
+
+    M.MinAnnualCapacityFactorConstraint_rpt = Set(
+        dimen=3, initialize=lambda M: M.MinAnnualCapacityFactor.sparse_iterkeys()
+    )
+    M.MinAnnualCapacityFactorConstraint = Constraint(
+        M.MinAnnualCapacityFactorConstraint_rpt, rule=MinAnnualCapacityFactor_Constraint
+    )
+
+    M.MaxAnnualCapacityFactorConstraint_rpt = Set(
+        dimen=3, initialize=lambda M: M.MaxAnnualCapacityFactor.sparse_iterkeys()
+    )
+    M.MaxAnnualCapacityFactorConstraint = Constraint(
+        M.MaxAnnualCapacityFactorConstraint_rpt, rule=MaxAnnualCapacityFactor_Constraint
+    )
+
 
     M.TechInputSplitConstraint_rpsditv = Set(
         dimen=7, initialize=TechInputSplitConstraintIndices
