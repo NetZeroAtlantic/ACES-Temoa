@@ -2345,6 +2345,115 @@ Similar to the :code:`MinCapacity` constraint, but works on a group of technolog
 
 
 
+
+
+
+
+def MaxAsynchronousShare_Constraint(M, r, p, s, d):
+    r"""
+
+The MaxAsynchronousShare constraint sets an upper bound on the activity for each
+timestep from all technologies listed in the tech_asynchronous set (:math:`\textbf{T}^{ASYNC}`).
+These are typically inverter based generators like wind and solar.
+The upper bound is calculated as a share of total generation. This share is
+specified by the MaxAsynchronousShare (:math:`\textbf{ASYNC}^{r,p}`) parameter.
+The total generation is calculated in the same way as the ReserveMargin constraint.
+That is, it is the sume of all technologies in the set tech_reserve (:math:`\textbf{T}^{r,e}`).
+Imports are added to the total and exports are subtracted from the total.
+
+Note: This formulation assumes the intersection of the sets tech_asynchronous and
+tech_annual is empty.
+
+.. math::
+   :label: MaxAsynchronousShare
+
+   \sum_{I,T^{ASYNC},V,O} \textbf{FO}_{p, s, d, i, t, v, o}
+
+   \leq
+
+   ASYNC_{r,p} \cdot
+   \sum_{ t \in T^{r,e},V,I,O } {
+       \textbf{FO}_{r, p, s, d, i, t, v, o}
+   }
+
+   \\
+   \forall \{r, p, s, d\} \in \Theta_{\text{MaxAsynchronousShare}}
+
+"""
+    # r can be an individual region (r='US'), or a combination of regions separated by comma (r='Mexico,US,Canada'), or 'global'.
+    # if r == 'global', the constraint is system-wide
+    if r == 'global':
+      reg = M.regions
+    else:
+      reg = [r]
+
+    if ((r, p) not in M.MaxAsynchronousShare.keys()):
+         return Constraint.Skip
+
+    # Calculate the total activity from asynchronous technologies
+    activity_rpsd = sum(
+        M.V_FlowOut[r, p, s, d, S_i, t, S_v, S_o]
+        for r in reg if ',' not in r
+        for t in M.tech_asynchronous
+        if (r, p, t) in M.processVintages.keys()
+        for S_v in M.processVintages[r, p, t]
+        for S_i in M.processInputs[r, p, t, S_v]
+        for S_o in M.ProcessOutputsByInput[r, p, t, S_v, S_i]
+    )
+
+    # Now, we calculate the total net generation in each timestep:
+    total_generation = sum(
+        M.V_FlowOut[r, p, s, d, S_i, t, S_v, S_o]
+        for (t, S_v) in M.processReservePeriods[r, p]
+        for S_i in M.processInputs[r, p, t, S_v]
+        for S_o in M.ProcessOutputsByInput[r, p, t, S_v, S_i]
+    )
+
+    # Electricity imports and exports via exchange techs are accounted
+    # for below:
+    for r1r2 in M.RegionalIndices:  # ensure the region is of the form r1-r2
+        if '-' not in r1r2:
+            continue
+        if (r1r2, p) not in M.processReservePeriods:  # ensure the technology in question exists
+            continue
+        r1, r2 = r1r2.split("-")
+
+
+        # First, determine the imports, and add this value from the
+        # total generation.
+        if r2 == r:
+            total_generation += sum(
+                M.V_FlowOut[r1r2, p, s, d, S_i, t, S_v, S_o]
+                for (t, S_v) in M.processReservePeriods[r1r2, p]
+                for S_i in M.processInputs[r1r2, p, t, S_v]
+                for S_o in M.ProcessOutputsByInput[r1r2, p, t, S_v, S_i]
+                if (t, S_v) in M.processReservePeriods[r1r2, p]
+            )
+
+
+        # Note: For now, we keep exports as part of the running total.
+        # Uncomment the below code block if you wish to subtract exports
+        # from the running total.
+
+        # # First, determine the exports, and subtract this value from the
+        # # total generation.
+        # elif r1 == r:
+        #     total_generation -= sum(
+        #         M.V_FlowOut[r1r2, p, s, d, S_i, t, S_v, S_o]
+        #         for (t, S_v) in M.processReservePeriods[r1r2, p]
+        #         for S_i in M.processInputs[r1r2, p, t, S_v]
+        #         for S_o in M.ProcessOutputsByInput[r1r2, p, t, S_v, S_i]
+        #     )
+
+
+
+
+    expr = activity_rpsd <= total_generation * value(M.MaxAsynchronousShare[r, p])
+    return expr
+
+
+
+
 def MinAnnualCapacityFactor_Constraint(M, r, p, t):
     r"""
 

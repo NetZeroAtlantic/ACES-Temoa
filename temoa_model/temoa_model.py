@@ -70,6 +70,7 @@ def temoa_create_model(name="Temoa"):
     M.tech_storage = Set(within=M.tech_all)
     M.tech_reserve = Set(within=M.tech_all)
     M.tech_ramping = Set(within=M.tech_all)
+    M.tech_asynchronous = Set(within=M.tech_all)
     M.tech_capacity_min = Set(within=M.tech_all)
     M.tech_capacity_max = Set(within=M.tech_all)
     M.tech_curtailment = Set(within=M.tech_all)
@@ -248,6 +249,7 @@ def temoa_create_model(name="Temoa"):
     M.MinActivity = Param(M.RegionalGlobalIndices, M.time_optimize, M.tech_all)
     M.MaxSeasonalActivity = Param(M.RegionalIndices, M.time_optimize, M.time_season, M.tech_all)
     M.MinSeasonalActivity = Param(M.RegionalIndices, M.time_optimize, M.time_season, M.tech_all)
+    M.MaxAsynchronousShare = Param(M.RegionalGlobalIndices, M.time_optimize)
     M.GrowthRateMax = Param(M.RegionalIndices, M.tech_all)
     M.GrowthRateSeed = Param(M.RegionalIndices, M.tech_all)
     M.EmissionLimit = Param(M.RegionalGlobalIndices, M.time_optimize, M.commodity_emissions)
@@ -531,6 +533,12 @@ def temoa_create_model(name="Temoa"):
     )
     M.MaxNewCapacityConstraint = Constraint(
         M.MaxNewCapacityConstraint_rpt, rule=MaxNewCapacity_Constraint
+    )
+
+    M.MaxAsynchronousShareConstraint_rpsd = Set(dimen=4, initialize=MaxAsynchronousShareIndices)
+
+    M.MaxAsynchronousShareConstraint = Constraint(
+        M.MaxAsynchronousShareConstraint_rpsd, rule=MaxAsynchronousShare_Constraint
     )
 
     M.MaxResourceConstraint_rt = Set(

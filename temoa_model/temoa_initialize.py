@@ -1293,7 +1293,17 @@ def ReserveMarginIndices(M):
     )
     return indices
 
+def MaxAsynchronousShareIndices(M):
+    indices = set(
+        (r, p, s, d)
 
+        for r in M.RegionalGlobalIndices
+        for p in M.time_optimize
+        for s in M.time_season
+        for d in M.time_of_day
+    )
+    return indices
+    
 def TechInputSplitConstraintIndices(M):
     indices = set(
         (r, p, s, d, i, t, v)
