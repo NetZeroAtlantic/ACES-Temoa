@@ -594,9 +594,6 @@ Note that this constraint is only applied to the demand commodities with diurnal
 variations, and therefore the equation above only includes :math:`\textbf{FO}`
 and not  :math:`\textbf{FOA}`
 """
-    if (r, p, s, d, dem) not in M.DemandSpecificDistribution.sparse_keys():
-        return Constraint.Skip
-    DSD = M.DemandSpecificDistribution  # lazy programmer
 
     act_a = sum(
         M.V_FlowOut[r, p, s_0, d_0, S_i, t, v, dem]
@@ -607,7 +604,7 @@ and not  :math:`\textbf{FOA}`
         for S_i in M.ProcessInputsByOutput[r, p, t, v, dem]
     )
 
-    expr = act_a * DSD[r, p, s, d, dem] == act_b * DSD[r, p, s_0, d_0, dem]
+    expr = act_a * M.DemandSpecificDistribution[r, p, s, d, dem] == act_b * M.DemandSpecificDistribution[r, p, s_0, d_0, dem]
     return expr
 
 
