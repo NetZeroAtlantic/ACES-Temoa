@@ -543,8 +543,6 @@ words, an end-use demand must only be an end-use demand.  Note that if an output
 could satisfy both an end-use and internal system demand, then the output from
 :math:`\textbf{FO}` and :math:`\textbf{FOA}` would be double counted.
 """
-    if (r, p, s, d, dem) not in M.DemandSpecificDistribution.sparse_keys():
-        return Constraint.Skip
 
     supply = sum(
         M.V_FlowOut[r, p, s, d, S_i, S_t, S_v, dem]
