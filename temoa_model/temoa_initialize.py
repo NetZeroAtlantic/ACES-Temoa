@@ -357,12 +357,14 @@ def CreateDemands(M):
     # Step 0: some setup for a couple of reusable items
 
     # iget(3): 3 = magic number to specify the fourth column.  Currently the
-    # demand in the tuple (r, s, d, dem)
-    DSD_dem_getter = iget(3)
+    # demand in the tuple (r, p, s, d, dem)
+    DSD_dem_getter = iget(4)
 
     # iget(0): 0 = magic number to specify the first column.  Currently the
-    # demand in the tuple (r, s, d, dem)
+    # demand in the tuple (r, p, s, d, dem)
     DSD_region_getter = iget(0)
+
+    DSD_period_getter = iget(1)
 
     # Step 1
     used_dems = set(dem for r, p, dem in M.Demand.sparse_iterkeys())
@@ -417,7 +419,7 @@ def CreateDemands(M):
                                 (i for i in DSD.sparse_iterkeys())))
     unset_demand_distributions = used_dems.difference(demands_specified)
     unset_distributions = set(
-        cross_product(M.regions, M.time_season, M.time_of_day, unset_demand_distributions))
+        cross_product(M.regions, M.time_optimize, M.time_season, M.time_of_day, unset_demand_distributions))
 
     if unset_distributions:
         # Some hackery because Pyomo thinks that this Param is constructed.
@@ -425,17 +427,19 @@ def CreateDemands(M):
         # targeting values that have not yet been constructed, that we know are
         # valid, and that we will need.
         # DSD._constructed = False
-        for r, s, d, dem in unset_distributions:
-            DSD[r, s, d, dem] = DDD[s, d]
+        for r, p, s, d, dem in unset_distributions:
+            DSD[r, p, s, d, dem] = DDD[s, d]
         # DSD._constructed = True
 
     # Step 5
-    used_reg_dems = set((r, dem) for r, p, dem in M.Demand.sparse_iterkeys())
-    for (r, dem) in used_reg_dems:
+    used_reg_dems = set((r, p, dem) for r, p, dem in M.Demand.sparse_iterkeys())
+    for (r, p, dem) in used_reg_dems:
         keys = (k for k in DSD.sparse_iterkeys() if DSD_dem_getter(
-            k) == dem and DSD_region_getter(k) == r)
+            k) == dem and DSD_region_getter(k) == r and
+            DSD_period_getter(k) == p )
         total = sum(DSD[i] for i in keys)
         if abs(value(total) - 1.0) > 0.001:
+            a = dfse
             # We can't explicitly test for "!= 1.0" because of incremental rounding
             # errors associated with the specification of demand shares by time slice,
             # but we check to make sure it is within the specified tolerance.
@@ -1128,14 +1132,14 @@ ensure demand activity remains consistent across time slices.
 
 
 def DemandConstraintIndices(M):
-    used_dems = set((r, dem) for r, p, dem in M.Demand.sparse_iterkeys())
+    used_dems = set((r, p, dem) for r, p, dem in M.Demand.sparse_iterkeys())
     DSD_keys = M.DemandSpecificDistribution.sparse_keys()
     dem_slices = {(r, dem): set(
         (s, d)
         for s in M.time_season
         for d in M.time_of_day
-        if (r, s, d, dem) in DSD_keys)
-        for (r, dem) in used_dems
+        if (r, p, s, d, dem) in DSD_keys)
+        for (r, p, dem) in used_dems
     }
 
     indices = set(
@@ -1303,7 +1307,7 @@ def MaxAsynchronousShareIndices(M):
         for d in M.time_of_day
     )
     return indices
-    
+
 def TechInputSplitConstraintIndices(M):
     indices = set(
         (r, p, s, d, i, t, v)

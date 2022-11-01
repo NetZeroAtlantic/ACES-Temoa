@@ -131,7 +131,7 @@ def temoa_create_model(name="Temoa"):
     # Define demand- and resource-related parameters
     M.DemandDefaultDistribution = Param(M.time_season, M.time_of_day, mutable=True)
     M.DemandSpecificDistribution = Param(
-        M.regions, M.time_season, M.time_of_day, M.commodity_demand, mutable=True
+        M.regions, M.time_optimize, M.time_season, M.time_of_day, M.commodity_demand, mutable=True
     )
 
     M.Demand = Param(M.regions, M.time_optimize, M.commodity_demand)

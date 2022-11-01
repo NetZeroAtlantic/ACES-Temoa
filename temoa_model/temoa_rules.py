@@ -543,7 +543,7 @@ words, an end-use demand must only be an end-use demand.  Note that if an output
 could satisfy both an end-use and internal system demand, then the output from
 :math:`\textbf{FO}` and :math:`\textbf{FOA}` would be double counted.
 """
-    if (r, s, d, dem) not in M.DemandSpecificDistribution.sparse_keys():
+    if (r, p, s, d, dem) not in M.DemandSpecificDistribution.sparse_keys():
         return Constraint.Skip
 
     supply = sum(
@@ -561,7 +561,7 @@ could satisfy both an end-use and internal system demand, then the output from
     DemandConstraintErrorCheck(supply + supply_annual, r, p, s, d, dem)
 
     expr = supply + supply_annual == M.Demand[r, p, dem] * \
-        M.DemandSpecificDistribution[r, s, d, dem]
+        M.DemandSpecificDistribution[r, p, s, d, dem]
     return expr
 
 
@@ -594,7 +594,7 @@ Note that this constraint is only applied to the demand commodities with diurnal
 variations, and therefore the equation above only includes :math:`\textbf{FO}`
 and not  :math:`\textbf{FOA}`
 """
-    if (r, s, d, dem) not in M.DemandSpecificDistribution.sparse_keys():
+    if (r, p, s, d, dem) not in M.DemandSpecificDistribution.sparse_keys():
         return Constraint.Skip
     DSD = M.DemandSpecificDistribution  # lazy programmer
 
@@ -607,7 +607,7 @@ and not  :math:`\textbf{FOA}`
         for S_i in M.ProcessInputsByOutput[r, p, t, v, dem]
     )
 
-    expr = act_a * DSD[r, s, d, dem] == act_b * DSD[r, s_0, d_0, dem]
+    expr = act_a * DSD[r, p, s, d, dem] == act_b * DSD[r, p, s_0, d_0, dem]
     return expr
 
 
