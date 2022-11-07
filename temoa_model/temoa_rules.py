@@ -1705,12 +1705,12 @@ Or to set a limit across all sectors, use the keyword 'all'.
 """
     emission_limit = M.EmissionLimit[r, q, p, e]
 
-    # r can be an individual region (r='US'), or a combination of regions separated by hyphen (r='Mexico-US-Canada'), or 'global'.
+    # r can be an individual region (r='US'), or a combination of regions separated by hyphen (r='Mexico-US-Canada'), or 'all'.
     # Note that regions!=M.regions. We iterate over regions to find actural_emissions and actual_emissions_annual.
     regions = set(r.split("-"))
 
-    # if r == 'global', the constraint is system-wide
-    if regions == {'global'}:
+    # if r == 'all', the constraint is system-wide
+    if regions == {'all'}:
         regions = M.regions
 
     # sec can be an individual sector (sec='electricity'), or a combination of secors separated by hyphen (r='electricity-transmission'), or 'all'.
@@ -1866,9 +1866,9 @@ set.
    \forall \{r, p, t \in T^{a}\} \in \Theta_{\text{MaxActivity}}
 
 """
-    # r can be an individual region (r='US'), or a combination of regions separated by comma (r='Mexico,US,Canada'), or 'global'.
-    # if r == 'global', the constraint is system-wide
-    if r == 'global':
+    # r can be an individual region (r='US'), or a combination of regions separated by comma (r='Mexico,US,Canada'), or 'all'.
+    # if r == 'all', the constraint is system-wide
+    if r == 'all':
       reg = M.regions
     else:
       reg = [r]
@@ -1966,9 +1966,9 @@ set.
    \forall \{r, p, t \in T^{a}\} \in \Theta_{\text{MinActivity}}
 
 """
-    # r can be an individual region (r='US'), or a combination of regions separated by comma (r='Mexico,US,Canada'), or 'global'.
-    # if r == 'global', the constraint is system-wide
-    if r == 'global':
+    # r can be an individual region (r='US'), or a combination of regions separated by comma (r='Mexico,US,Canada'), or 'all'.
+    # if r == 'all', the constraint is system-wide
+    if r == 'all':
       reg = M.regions
     else:
       reg = [r]
@@ -2399,9 +2399,9 @@ tech_annual is empty.
    \forall \{r, p, s, d\} \in \Theta_{\text{MaxAsynchronousShare}}
 
 """
-    # r can be an individual region (r='US'), or a combination of regions separated by comma (r='Mexico,US,Canada'), or 'global'.
-    # if r == 'global', the constraint is system-wide
-    if r == 'global':
+    # r can be an individual region (r='US'), or a combination of regions separated by comma (r='Mexico,US,Canada'), or 'all'.
+    # if r == 'all', the constraint is system-wide
+    if r == 'all':
       reg = M.regions
     else:
       reg = [r]
@@ -2494,9 +2494,9 @@ pertains to technologies with constant annual output belonging to the
    \forall \{r, p, t \in T^{a}\} \in \Theta_{\text{MinAnnualCapacityFactor}}
 
 """
-    # r can be an individual region (r='US'), or a combination of regions separated by comma (r='Mexico,US,Canada'), or 'global'.
-    # if r == 'global', the constraint is system-wide
-    if r == 'global':
+    # r can be an individual region (r='US'), or a combination of regions separated by comma (r='Mexico,US,Canada'), or 'all'.
+    # if r == 'all', the constraint is system-wide
+    if r == 'all':
       reg = M.regions
     else:
       reg = [r]
@@ -2547,9 +2547,9 @@ def MaxAnnualCapacityFactor_Constraint(M, r, p, t):
        \forall \{r, p, t \in T^{a}\} \in \Theta_{\text{MaxAnnualCapacityFactor}}
 
     """
-        # r can be an individual region (r='US'), or a combination of regions separated by comma (r='Mexico,US,Canada'), or 'global'.
-        # if r == 'global', the constraint is system-wide
-        if r == 'global':
+        # r can be an individual region (r='US'), or a combination of regions separated by comma (r='Mexico,US,Canada'), or 'all'.
+        # if r == 'all', the constraint is system-wide
+        if r == 'all':
           reg = M.regions
         else:
           reg = [r]
