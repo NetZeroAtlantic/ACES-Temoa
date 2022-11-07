@@ -62,6 +62,11 @@ def temoa_create_model(name="Temoa"):
     # exhanges plus original region indices. If tech_exchange is empty, RegionalIndices =regions.
     M.RegionalIndices = Set(initialize=CreateRegionalIndices)
 
+
+    # Define sectors
+    M.sector_labels = Set()
+
+
     # Define technology-related sets
     M.tech_resource = Set()
     M.tech_production = Set()
@@ -81,6 +86,10 @@ def temoa_create_model(name="Temoa"):
 
     # Define technology groups
     M.tech_groups = Set(within=M.RegionalIndices * M.groups * M.tech_all)
+
+    # Define technology to sector maps
+    M.tech_to_sector = Set(within=M.tech_all * M.sector_labels)
+
 
     # Define techs for use with TechInputSplitAverage constraint, where techs have variable annual output but the user wishes to constrain them annually
     M.tech_variable = Set(within=M.tech_all)
@@ -240,6 +249,7 @@ def temoa_create_model(name="Temoa"):
 
     # Define parameters associated with user-defined constraints
     M.RegionalGlobalIndices = Set(initialize=RegionalGlobalInitializedIndices)
+    M.SectorGlobalIndices = Set(initialize=SectorGlobalInitializedIndices)
     M.MinCapacity = Param(M.RegionalIndices, M.time_optimize, M.tech_all)
     M.MaxCapacity = Param(M.RegionalIndices, M.time_optimize, M.tech_all)
     M.MinNewCapacity = Param(M.RegionalIndices, M.time_optimize, M.tech_all)
@@ -252,7 +262,7 @@ def temoa_create_model(name="Temoa"):
     M.MaxAsynchronousShare = Param(M.RegionalGlobalIndices, M.time_optimize)
     M.GrowthRateMax = Param(M.RegionalIndices, M.tech_all)
     M.GrowthRateSeed = Param(M.RegionalIndices, M.tech_all)
-    M.EmissionLimit = Param(M.RegionalGlobalIndices, M.time_optimize, M.commodity_emissions)
+    M.EmissionLimit = Param(M.RegionalGlobalIndices, M.SectorGlobalIndices, M.time_optimize, M.commodity_emissions)
     M.EmissionActivity_reitvo = Set(dimen=6, initialize=EmissionActivityIndices)
     M.EmissionActivity = Param(M.EmissionActivity_reitvo)
     M.MinActivityGroup = Param(M.RegionalIndices, M.time_optimize, M.groups)
@@ -460,11 +470,11 @@ def temoa_create_model(name="Temoa"):
         M.ReserveMargin_rpsd, rule=ReserveMargin_Constraint
     )
 
-    M.EmissionLimitConstraint_rpe = Set(
-        dimen=3, initialize=lambda M: M.EmissionLimit.sparse_iterkeys()
+    M.EmissionLimitConstraint_rxpe = Set(
+        dimen=4, initialize=lambda M: M.EmissionLimit.sparse_iterkeys()
     )
     M.EmissionLimitConstraint = Constraint(
-        M.EmissionLimitConstraint_rpe, rule=EmissionLimit_Constraint
+        M.EmissionLimitConstraint_rxpe, rule=EmissionLimit_Constraint
     )
 
     from itertools import product

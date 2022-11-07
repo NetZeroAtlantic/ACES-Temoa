@@ -1671,7 +1671,7 @@ we write this equation for all the time-slices defined in the database in each r
     return cap_avail >= cap_target
 
 
-def EmissionLimit_Constraint(M, r, p, e):
+def EmissionLimit_Constraint(M, r, q, p, e):
     r"""
 
 A modeler can track emissions through use of the :code:`commodity_emissions`
@@ -1681,6 +1681,10 @@ EmissionLimit constraint allows the modeler to assign an upper bound per period
 to each emission commodity. Note that this constraint sums emissions from
 technologies with output varying at the time slice and those with constant annual
 output in separate terms.
+
+Additionally, users can set sector-specific emission limits. To set limits for
+multiple sectors, separate the sectors by a hyphen (e.g., electricity-industry).
+Or to set a limit across all sectors, use the keyword 'all'.
 
 .. math::
    :label: EmissionLimit
@@ -1699,7 +1703,7 @@ output in separate terms.
        & \forall \{r, p, e\} \in \Theta_{\text{EmissionLimit}}
 
 """
-    emission_limit = M.EmissionLimit[r, p, e]
+    emission_limit = M.EmissionLimit[r, q, p, e]
 
     # r can be an individual region (r='US'), or a combination of regions separated by hyphen (r='Mexico-US-Canada'), or 'global'.
     # Note that regions!=M.regions. We iterate over regions to find actural_emissions and actual_emissions_annual.
@@ -1709,12 +1713,28 @@ output in separate terms.
     if regions == {'global'}:
         regions = M.regions
 
+    # sec can be an individual sector (sec='electricity'), or a combination of secors separated by hyphen (r='electricity-transmission'), or 'all'.
+    sectors = set(q.split("-"))
+
+    # if sec == 'all', the constraint is system-wide
+    if sectors == {'all'}:
+        sectors = M.sector_labels
+
+    # Create a dictionary mapping technologies to their sector.
+    # This is not optimized and should be revisitied.
+    # That said, it's not a big issue as the number of Technologies
+    # is relatively small
+    tech_to_sec_dict = dict()
+    for t, s in M.tech_to_sector.keys():
+        tech_to_sec_dict[t] = s
+
     actual_emissions = sum(
         M.V_FlowOut[reg, p, S_s, S_d, S_i, S_t, S_v, S_o]
         * M.EmissionActivity[reg, e, S_i, S_t, S_v, S_o]
         for reg in regions
+        for sec in sectors
         for tmp_r, tmp_e, S_i, S_t, S_v, S_o in M.EmissionActivity.sparse_iterkeys()
-        if tmp_e == e and tmp_r == reg and S_t not in M.tech_annual
+        if tmp_e == e and tmp_r == reg and sec == tech_to_sec_dict[S_t] and S_t not in M.tech_annual
         # EmissionsActivity not indexed by p, so make sure (r,p,t,v) combos valid
         if (reg, p, S_t, S_v) in M.processInputs.keys()
         for S_s in M.time_season
@@ -1725,8 +1745,9 @@ output in separate terms.
         M.V_Flex[reg, p, S_s, S_d, S_i, S_t, S_v, S_o]
         * M.EmissionActivity[reg, e, S_i, S_t, S_v, S_o]
         for reg in regions
+        for sec in sectors
         for tmp_r, tmp_e, S_i, S_t, S_v, S_o in M.EmissionActivity.sparse_iterkeys()
-        if tmp_e == e and tmp_r == reg and S_t not in M.tech_annual and S_t in M.tech_flex and S_o in M.flex_commodities
+        if tmp_e == e and tmp_r == reg and sec == tech_to_sec_dict[S_t] and S_t not in M.tech_annual and S_t in M.tech_flex and S_o in M.flex_commodities
         # EmissionsActivity not indexed by p, so make sure (r,p,t,v) combos valid
         if (reg, p, S_t, S_v) in M.processInputs.keys()
         for S_s in M.time_season
@@ -1737,8 +1758,9 @@ output in separate terms.
         M.V_Curtailment[reg, p, S_s, S_d, S_i, S_t, S_v, S_o]
         * M.EmissionActivity[reg, e, S_i, S_t, S_v, S_o]
         for reg in regions
+        for sec in sectors
         for tmp_r, tmp_e, S_i, S_t, S_v, S_o in M.EmissionActivity.sparse_iterkeys()
-        if tmp_e == e and tmp_r == reg and S_t not in M.tech_annual and S_t in M.tech_curtailment
+        if tmp_e == e and tmp_r == reg and sec == tech_to_sec_dict[S_t] and S_t not in M.tech_annual and S_t in M.tech_curtailment
         # EmissionsActivity not indexed by p, so make sure (r,p,t,v) combos valid
         if (reg, p, S_t, S_v) in M.processInputs.keys()
         for S_s in M.time_season
@@ -1749,8 +1771,9 @@ output in separate terms.
         M.V_FlowOutAnnual[reg, p, S_i, S_t, S_v, S_o]
         * M.EmissionActivity[reg, e, S_i, S_t, S_v, S_o]
         for reg in regions
+        for sec in sectors
         for tmp_r, tmp_e, S_i, S_t, S_v, S_o in M.EmissionActivity.sparse_iterkeys()
-        if tmp_e == e and tmp_r == reg and S_t in M.tech_annual
+        if tmp_e == e and tmp_r == reg and sec == tech_to_sec_dict[S_t] and S_t in M.tech_annual
         # EmissionsActivity not indexed by p, so make sure (r,p,t,v) combos valid
         if (reg, p, S_t, S_v) in M.processInputs.keys()
     )
@@ -1759,8 +1782,9 @@ output in separate terms.
         M.V_FlexAnnual[reg, p, S_i, S_t, S_v, S_o]
         * M.EmissionActivity[reg, e, S_i, S_t, S_v, S_o]
         for reg in regions
+        for sec in sectors
         for tmp_r, tmp_e, S_i, S_t, S_v, S_o in M.EmissionActivity.sparse_iterkeys()
-        if tmp_e == e and tmp_r == reg and S_t in M.tech_annual and S_t in M.tech_flex and S_o in M.flex_commodities
+        if tmp_e == e and tmp_r == reg and sec == tech_to_sec_dict[S_t] and S_t in M.tech_annual and S_t in M.tech_flex and S_o in M.flex_commodities
         # EmissionsActivity not indexed by p, so make sure (r,p,t,v) combos valid
         if (reg, p, S_t, S_v) in M.processInputs.keys()
     )

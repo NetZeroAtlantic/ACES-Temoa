@@ -82,6 +82,7 @@ class TemoaModel(AbstractModel):
         self.flex_commodities = set()
 
 
+
 # ---------------------------------------------------------------
 # Validation and initialization routines.
 # There are a variety of functions in this section that do the following:
@@ -901,6 +902,16 @@ def RegionalGlobalInitializedIndices ( M ):
             indices.add("-".join(i))
     indices.add('global')
 
+    return indices
+
+def SectorGlobalInitializedIndices ( M ):
+    from itertools import permutations
+    indices = set()
+    for n in range(1, len(M.sector_labels)+1):
+        sector_perms = permutations(M.sector_labels, n)
+        for i in sector_perms:
+            indices.add("-".join(i))
+    indices.add('all')
     return indices
 
 def EfficiencyVariableIndices(M):

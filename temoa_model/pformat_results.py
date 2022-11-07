@@ -127,7 +127,7 @@ def pformat_results(pyomo_instance, pyomo_result, options):
     svars = defaultdict(lambda: defaultdict(float))
 
     con_info = list()
-    epsilon = 1e-9   # threshold for "so small it's zero"
+    epsilon = 1e-8   # threshold for "so small it's zero"
 
     emission_keys = {(r, i, t, v, o): set() for r, e, i, t, v, o in m.EmissionActivity}
     for r, e, i, t, v, o in m.EmissionActivity:
@@ -259,10 +259,14 @@ def pformat_results(pyomo_instance, pyomo_result, options):
 
     # Extract the implicit emissions prices. These are equivalent to the
     # shadow price/dual variable of the emission limit constraint.
-    for r, p, e in m.EmissionLimitConstraint:
-        # dual variables are given as non-positive. For consistency we
+    for r, q, p, e in m.EmissionLimitConstraint:
+        # this dual variable is given as non-positive. For consistency we
         # report them as non-negative.
-        svars['EmissionShadowPrice'][r, p, e] = abs(m.dual[m.EmissionLimitConstraint[r, p, e]])
+        val = abs(m.dual[m.EmissionLimitConstraint[r, q, p, e]])
+        if val < epsilon:
+            val = 0
+            continue
+        svars['EmissionShadowPrice'][r, q, p, e] = val
 
     # Calculate the job numbers
     if hasattr(options, 'file_location') and os.path.join('temoa_model', 'config_sample_myopic') not in options.file_location:
@@ -578,17 +582,15 @@ def pformat_results(pyomo_instance, pyomo_result, options):
                     if hasattr(options, 'file_location') and options.scenario == val[0] and os.path.join('temoa_model', 'config_sample_myopic') not in options.file_location:
                         cur.execute("DELETE FROM "+tables[table]+" \
                                     WHERE scenario is '"+options.scenario+"'")
-                if table == 'Objective':  # First of two tables without sector info
+                if table == 'Objective':  # Only table without sector info
                     for key in svars[table].keys():
                         key_str = str(key)  # only 1 row to write
                         key_str = key_str[1:-1]  # Remove parentheses
                         cur.execute("INSERT INTO "+tables[table]+" \
                                     VALUES('"+options.scenario+"',"+key_str+", \
                                     "+str(svars[table][key])+");")
-                elif table == 'EmissionShadowPrice':  # Second of two tables without sector info
-                    # Add the relevant entries into the EmissionShadowPrice table
-                    # in the SQLite file.
-                    for key in svars[table].keys():  # Need to loop over keys (rows)
+                elif table == 'EmissionShadowPrice':
+                     for key in svars[table].keys():  # Need to loop over keys (rows)
                         key_str = str(key)
                         key_str = key_str[1:-1]  # Remove parentheses
                         cur.execute("INSERT INTO "+tables[table] +

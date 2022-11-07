@@ -50,6 +50,13 @@ def db_2_dat(ifile, ofile, options):
                 f.write(row[0] + '\n')
             f.write(';\n\n')
 
+    def make_tech_to_sector_maps(f):
+        cur.execute("SELECT tech, sector FROM technologies")
+        f.write("set tech_to_sector :=\n")
+        for row in cur:
+            f.write(row[0] + '\t' + row[1] + '\n')
+        f.write(';\n\n')
+
     def query_table(t_properties, f):
         t_type = t_properties[0]  # table type (set or param)
         t_name = t_properties[1]  # table name
@@ -129,8 +136,9 @@ def db_2_dat(ifile, ofile, options):
         ['set',  'tech_annual',               '',                    '',             0],
         ['set',  'tech_variable',             '',                    '',             0],
         ['set',  'tech_asynchronous',         '',                    '',             0],
-        ['set', 'tech_groups',                '',                    '',             2],
+        ['set',  'tech_groups',               '',                    '',             2],
         ['set',  'groups',                    '',                    '',             0],
+        ['set',  'sector_labels',             '',                    '',             0],
         ['param', 'LinkedTechs',               '',                    '',             3],
         ['param', 'SegFrac',                   '',                    '',             2],
         ['param', 'DemandSpecificDistribution', '',                    '',             5],
@@ -140,7 +148,7 @@ def db_2_dat(ifile, ofile, options):
         ['param', 'MyopicBaseyear',            '',                    '',             0],
         ['param', 'DiscountRate',              '',                    '',             3],
         ['param', 'EmissionActivity',          '',                    '',             6],
-        ['param', 'EmissionLimit',             '',                    '',             3],
+        ['param', 'EmissionLimit',             '',                    '',             4],
         ['param', 'Demand',                    '',                    '',             3],
         ['param', 'TechOutputSplit',           '',                    '',             4],
         ['param', 'TechInputSplit',            '',                    '',             4],
@@ -205,6 +213,8 @@ def db_2_dat(ifile, ofile, options):
             write_tech_mga(f)
         if options.mga_weight == 'normalized':
             write_tech_sector(f)
+
+        make_tech_to_sector_maps(f)
 
         # Making sure the database is empty from the begining for a myopic solve
         if options.myopic:
