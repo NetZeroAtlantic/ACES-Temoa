@@ -440,7 +440,6 @@ def CreateDemands(M):
             DSD_period_getter(k) == p )
         total = sum(DSD[i] for i in keys)
         if abs(value(total) - 1.0) > 0.001:
-            a = dfse
             # We can't explicitly test for "!= 1.0" because of incremental rounding
             # errors associated with the specification of demand shares by time slice,
             # but we check to make sure it is within the specified tolerance.
