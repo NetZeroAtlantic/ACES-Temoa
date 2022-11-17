@@ -220,6 +220,9 @@ def temoa_create_model(name="Temoa"):
     )
     M.CostEmissionsDefault = Param(M.CostEmissionsDefault_re)
 
+    M.OutputBasedStandard_rpeito = Set(dimen=6, initialize=OutputBasedStandardIndices)
+    M.OutputBasedStandard = Param(M.OutputBasedStandard_rpeito, mutable=True, default=0.0)
+
     M.initialize_Costs = BuildAction(rule=CreateCosts)
 
     M.DiscountRate_rtv = Set(dimen=3, initialize=lambda M: M.CostInvest.keys())
@@ -453,7 +456,7 @@ def temoa_create_model(name="Temoa"):
     # Removing the RampUpSeason and RampDownSeason constraints.
     # When using representative days, it is not fair to assume representative
     # days are consecutive.
-    
+
     # M.RampConstraintSeason_rpstv = Set(dimen=5, initialize=RampConstraintSeasonIndices)
     # M.RampUpConstraintSeason = Constraint(
         # M.RampConstraintSeason_rpstv, rule=RampUpSeason_Constraint

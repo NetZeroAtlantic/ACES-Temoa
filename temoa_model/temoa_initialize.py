@@ -222,6 +222,37 @@ def validate_SegFrac(M):
         raise Exception(msg.format(items, total))
 
 
+def validate_OutputBasedStandard(M):
+    # We want to make sure the (region, period, emission_commodity) indices for
+    # M.OutputBasedStandard entries have a corresponding CostEmissions.
+
+    rpe_set_obs = set((r, p, e) for r, p, e, i, t, o in M.OutputBasedStandard.sparse_iterkeys())
+    rpe_set_costem = set(M.CostEmissions.sparse_iterkeys())
+    for rpe in rpe_set:
+        # if the (r,p,e) combination in the OutputBasedStandard parameter is not
+        # found in the set of all defined (r,p,e) CostEmissions indices, return
+        # an error.
+        if not rpe <= rpe_set_costem:
+            msg = ('The following (region, period, emission_commodity) entry '
+                   'for the OutputBasedStandard parameter has no associated '
+                   'entry in CostEmissions:\n Index: {}')
+            indices = (str(i) for i in rpe)
+            raise Exception(msg.format(', '.join(indices)))
+
+    rito_set_obs = set((r, i, t, o) for r, p, e, i, t, o in M.OutputBasedStandard.sparse_iterkeys())
+    rito_set_eff = set(M.Efficiency.sparse_iterkeys())
+    for rito in rito_set:
+        # if the (r,i,t,o) combination in the OutputBasedStandard parameter is not
+        # in the keys of the Efficiency parameter (i.e. signalling an undefined
+        # process) return an error.
+        if not rito <= rito_set_eff:
+            msg = ('The following (region, input_comm, tech, output_comm) entry '
+                   'for the OutputBasedStandard parameter has no associated '
+                   'entry in Efficiency:\n Index: {}')
+            indices = (str(i) for i in rito)
+            raise Exception(msg.format(', '.join(indices)))
+
+
 def CheckEfficiencyIndices(M):
     """
     Ensure that there are no unused items in any of the Efficiency index sets.
@@ -930,6 +961,19 @@ def EmissionActivityIndices(M):
 
         for r, i, t, v, o in M.Efficiency.sparse_iterkeys()
         for e in M.commodity_emissions
+    )
+
+    return indices
+
+def OutputBasedStandardIndices(M):
+    indices = set(
+        (r, p, e, i, t, o)
+
+        for r, p, t in M.processVintages.keys()
+        for v in M.processVintages[r, p, t] if (r, p, t, v) in M.activeActivity_rptv
+        for e in M.commodity_emissions
+        for i in M.processInputs[r, p, t, v]
+        for o in M.ProcessOutputsByInput[r, p, t, v, i]
     )
 
     return indices

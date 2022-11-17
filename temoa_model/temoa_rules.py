@@ -394,6 +394,9 @@ def PeriodCost_rule(M, p):
         for S_o in M.ProcessOutputsByInput[r, S_p, S_t, S_v, S_i]
     )
 
+
+    # Now we calculate costs related to the CostEmissions parameter
+    #
     # In Temoa, there are five types of processes that can produce
     # emissions:
     # 1. Variable activity (e.g. from a dispatchable power plant)
@@ -403,11 +406,13 @@ def PeriodCost_rule(M, p):
     # 5. Annual flex activity (e.g. from techs in both the "tech_annual" and
     #       "tech_flex" sets.)
     #
-    # Here, we determine the the cost of emissions by adding summing over the
+    # Here, we determine the the cost of emissions by summing over the
     # five potentially emitting types of processes outlined above.
+    #
 
-    # 1. Variable activity
-    variable_emission_costs = sum(
+
+    # Emitting Process #1: Variable activity
+    emissions_costs_1 = sum(
         M.V_FlowOut[r, p, S_s, S_d, S_i, S_t, S_v, S_o]
         * M.EmissionActivity[r, e, S_i, S_t, S_v, S_o]
         * (
@@ -426,8 +431,10 @@ def PeriodCost_rule(M, p):
         for S_s in M.time_season
         for S_d in M.time_of_day
     )
-    # 2. Variable flex activity
-    variable_emission_costs += sum(
+
+
+    # Emitting Process #2: Variable flex activity
+    emissions_costs_2 = sum(
         M.V_Flex[reg, p, S_s, S_d, S_i, S_t, S_v, S_o]
         * M.EmissionActivity[r, e, S_i, S_t, S_v, S_o]
         * (
@@ -446,8 +453,8 @@ def PeriodCost_rule(M, p):
         for S_s in M.time_season
         for S_d in M.time_of_day
     )
-    # 3. Curtailed activity
-    variable_emission_costs += sum(
+    # Emitting Process #3: Curtailed activity
+    emissions_costs_3 = sum(
         M.V_Curtailment[r, p, S_s, S_d, S_i, S_t, S_v, S_o]
         * M.EmissionActivity[r, e, S_i, S_t, S_v, S_o]
         * (
@@ -468,8 +475,8 @@ def PeriodCost_rule(M, p):
         for S_d in M.time_of_day
     )
 
-    # 4. Annual activity
-    variable_emission_costs += sum(
+    # Emitting Process #4: Annual activity
+    emissions_costs_4 = sum(
         M.V_FlowOutAnnual[r, p, S_i, S_t, S_v, S_o]
         * M.EmissionActivity[r, e, S_i, S_t, S_v, S_o]
         * (
@@ -487,8 +494,8 @@ def PeriodCost_rule(M, p):
         if (r, p, S_t, S_v) in M.processInputs.keys()
     )
 
-    # 5. Annual flex activity
-    variable_emission_costs += sum(
+    # Emitting Process #5: Annual flex activity
+    emissions_costs_5 = sum(
         M.V_FlexAnnual[r, p, S_i, S_t, S_v, S_o]
         * M.EmissionActivity[r, e, S_i, S_t, S_v, S_o]
         * (
@@ -507,8 +514,53 @@ def PeriodCost_rule(M, p):
         if (r, p, S_t, S_v) in M.processInputs.keys()
     )
 
+    emission_costs = emissions_costs_1 + emissions_costs_2 + emissions_costs_3 + emissions_costs_4 + emissions_costs_5
+
+
+    # Finally, we calculate the credits related to the Output Based Standard.
+    #
+    # This follows a similar approach to calculating the emission costs above.
+
+
+
+
+    obps_costs = -sum(
+        M.V_FlowOut[r, p, s, d, i, t, v, o]
+        * (
+            value(M.CostEmissions[r, p, e]) * value(M.OutputBasedStandard[r, p, e, i, t, o])
+            * (
+                value(MPL[r, p, t, v])
+                if not GDR
+                else (x ** (P_0 - p + 1) * (1 - x ** (-value(MPL[r, p, t, v]))) / GDR)
+            )
+        )
+        for r, S_p, e, i, t, o in M.OutputBasedStandard.sparse_iterkeys()
+        if S_p == p and t not in M.tech_annual
+        for v in M.vintage_all if (r, p, t, v) in M.activeActivity_rptv
+        for s in M.time_season
+        for d in M.time_of_day
+    )
+
+    obps_costs_annual = -sum(
+        M.V_FlowOutAnnual[r, p, i, t, v, o]
+        * (
+            value(M.CostEmissions[r, p, e]) * value(M.OutputBasedStandard[r, p, e, i, t, o])
+            * (
+                value(MPL[r, p, t, v])
+                if not GDR
+                else (x ** (P_0 - p + 1) * (1 - x ** (-value(MPL[r, p, t, v]))) / GDR)
+            )
+        )
+        for r, S_p, e, i, t, o in M.OutputBasedStandard.sparse_iterkeys()
+        if S_p == p and t in M.tech_annual
+        for v in M.vintage_all if (r, p, t, v) in M.activeActivity_rptv
+    )
+
+    obps_cost_total = obps_costs_annual + obps_costs
+
     period_costs = loan_costs + fixed_costs + variable_costs + \
-        variable_costs_annual + variable_emission_costs
+        variable_costs_annual + emission_costs + obps_cost_total
+
     return period_costs
 
 
@@ -1601,7 +1653,7 @@ we write this equation for all the time-slices defined in the database in each r
     # The above code does not consider exchange techs, e.g. electricity
     # transmission between two distinct regions.
     # We take exchange takes into account below.
-    # Note that a singe exchange tech linking regions Ri and Rj is twice
+    # Note that a single exchange tech linking regions Ri and Rj is twice
     # defined: once for region "Ri-Rj" and once for region "Rj-Ri".
 
     # First, determine the amount of firm capacity each exchange tech
@@ -1610,6 +1662,7 @@ we write this equation for all the time-slices defined in the database in each r
         if '-' not in r1r2:
             continue
         r1, r2 = r1r2.split("-")
+
         # Only consider the capacity of technologies that import to
         # the region in question -- i.e. for cases where r2 == r.
         if r2 != r:

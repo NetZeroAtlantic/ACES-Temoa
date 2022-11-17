@@ -377,6 +377,41 @@ def pformat_results(pyomo_instance, pyomo_result, options):
                 )
                 svars['Costs']['V_DiscountedEmissionsCostsByProcess', r, t, v] += ecost
 
+
+        # Calculate the credits associated with the Output Based Standard, if applicable.
+        for r, p, e, i, t, o in m.OutputBasedStandard.sparse_iterkeys():
+            for v in m.vintage_all:
+                if (r, p, t, v) not in m.activeActivity_rptv:
+                    continue
+                if t not in m.tech_annual:
+                    obps_cost = -sum(
+                        value(m.V_FlowOut[r, p, S_s, S_d, i, t, v, o])
+                        * value(m.OutputBasedStandard[r, p, e, i, t, o])
+                        * value(m.CostEmissions[r, p, e])
+                        for S_s in m.time_season
+                        for S_d in m.time_of_day
+                    )
+
+                else:
+                    obps_cost = -sum(
+                        value(m.V_FlowOutAnnual[r, p, i, t, v, o])
+                        * value(m.OutputBasedStandard[r, p, e, i, t, o])
+                        * value(m.CostEmissions[r, p, e])
+                    )
+
+                if abs(obps_cost) < epsilon:
+                    continue
+
+                svars[    'Costs'    ]['V_UndiscountedOBPSCostsByProcess',
+                                 r, t, v] += obps_cost * value(MPL[r, p, t, v])
+                obps_cost *= (
+                    value(MPL[r, p, t, v]) if not GDR else
+                    (x ** (P_0 - p + 1) * (1 - x ** (-value(MPL[r, p, t, v]))) / GDR)
+                )
+                svars[    'Costs'    ]['V_DiscountedOBPSCostsByProcess', r, t, v] += obps_cost
+
+
+
         # update the costs of exchange technologies.
         # Assumption 1: If Ri-Rj appears in the cost tables but Rj-Ri does not,
         # then the total costs are distributed between the regions
