@@ -156,10 +156,19 @@ def pformat_results(pyomo_instance, pyomo_result, options):
     # Extract optimal decision variable values related to commodity flow:
     for r, p, s, d, t, v in m.V_StorageLevel:
         val = value(m.V_StorageLevel[r, p, s, d, t, v])
-        if abs(val) < epsilon:
+
+        energy_capacity = (
+            value(m.V_Capacity[r, t, v])
+            *value( m.CapacityToActivity[r, t])
+            * (value(m.StorageDuration[r, t]) / 8760)
+            * sum(value(m.SegFrac[s, S_d]) for S_d in m.time_of_day) * 365
+            * value(m.ProcessLifeFrac[r, p, t, v])
+        )
+
+        if abs(energy_capacity) < epsilon:
             continue
 
-        svars['V_StorageLevel'][r, p, s, d, t, v] = val
+        svars['V_StorageSOC'][r, p, s, d, t, v] = val / energy_capacity
 
     # vflow_in is defined only for storage techs
     for r, p, s, d, i, t, v, o in m.V_FlowIn:
@@ -521,6 +530,7 @@ def pformat_results(pyomo_instance, pyomo_result, options):
     # Table dictionary below maps variable names to database table names
     tables = {"V_FlowIn": "Output_VFlow_In",
               "V_FlowOut": "Output_VFlow_Out",
+              "V_StorageSOC": "Output_VStorageSOC",
               "V_Curtailment": "Output_Curtailment",
               "V_Capacity": "Output_V_Capacity",
               "V_CapacityAvailableByPeriodAndTech": "Output_CapacityByPeriodAndTech",
