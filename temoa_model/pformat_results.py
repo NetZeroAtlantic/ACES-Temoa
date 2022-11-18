@@ -127,7 +127,7 @@ def pformat_results(pyomo_instance, pyomo_result, options):
     svars = defaultdict(lambda: defaultdict(float))
 
     con_info = list()
-    epsilon = 1e-8   # threshold for "so small it's zero"
+    epsilon = 1e-6   # threshold for "so small it's zero"
 
     emission_keys = {(r, i, t, v, o): set() for r, e, i, t, v, o in m.EmissionActivity}
     for r, e, i, t, v, o in m.EmissionActivity:
