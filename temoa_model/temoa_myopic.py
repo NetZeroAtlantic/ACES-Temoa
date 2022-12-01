@@ -58,7 +58,7 @@ def myopic_db_generator_solver(self):
                                        db_name)+"_blank"+self.options.output[loc2:])
 
     # group 1 consists of non output tables in which "periods" is a column name
-    tables_group1 = ['CostFixed', 'CostVariable', 'Demand', 'EmissionLimit', 'MaxActivity', 'MaxSeasonalActivity', 'MaxCapacity',
+    tables_group1 = ['CostFixed', 'CostVariable', 'Demand', 'DemandSpecificDistribution', 'EmissionLimit', 'MaxActivity', 'MaxSeasonalActivity', 'MaxCapacity',
                      'MinActivity', 'MinSeasonalActivity', 'MinCapacity', 'TechInputSplit', 'TechInputSplitAverage', 'TechOutputSplit', 'CapacityCredit', 'MinGenGroupTarget']
     # group 2 consists of non output tables in which "vintage" is a column name except for CostFixed and CostVariable (taken care of above)
     tables_group2 = ['CapacityFactorProcess', 'CostInvest', 'DiscountRate',
