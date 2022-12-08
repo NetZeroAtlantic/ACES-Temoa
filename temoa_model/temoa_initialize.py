@@ -915,7 +915,7 @@ def CostEmissionsIndices(M):
     indices = set(
         (r, p, e)
 
-        for r in M.regions
+        for r in M.RegionalIndices
         for p in M.time_optimize
         for e in M.commodity_emissions
     )
