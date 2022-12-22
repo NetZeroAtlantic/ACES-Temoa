@@ -224,19 +224,20 @@ CREATE TABLE "PlanningReserveMargin" (
 	PRIMARY KEY(regions),
 	FOREIGN KEY(`regions`) REFERENCES regions
 );
-CREATE TABLE "Output_V_Capacity" (
+
+CREATE TABLE IF NOT EXISTS "Output_V_Capacity" (
 	"regions"	text,
 	"scenario"	text,
 	"sector"	text,
 	"tech"	text,
 	"vintage"	integer,
 	"capacity"	real,
-	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods"),
 	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	PRIMARY KEY("regions","scenario","tech","vintage"),
 	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
-	PRIMARY KEY("regions","scenario","tech","vintage")
+	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods")
 );
-CREATE TABLE "Output_VFlow_Out" (
+CREATE TABLE IF NOT EXISTS "Output_VFlow_Out" (
 	"regions"	text,
 	"scenario"	text,
 	"sector"	text,
@@ -248,17 +249,17 @@ CREATE TABLE "Output_VFlow_Out" (
 	"vintage"	integer,
 	"output_comm"	text,
 	"vflow_out"	real,
-	FOREIGN KEY("output_comm") REFERENCES "commodities"("comm_name"),
+	FOREIGN KEY("input_comm") REFERENCES "commodities"("comm_name"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
+	PRIMARY KEY("regions","scenario","t_periods","t_season","t_day","input_comm","tech","vintage","output_comm"),
+	FOREIGN KEY("t_day") REFERENCES "time_of_day"("t_day"),
 	FOREIGN KEY("t_season") REFERENCES "time_periods"("t_periods"),
 	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
-	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
-	FOREIGN KEY("input_comm") REFERENCES "commodities"("comm_name"),
-	FOREIGN KEY("t_day") REFERENCES "time_of_day"("t_day"),
 	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods"),
-	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
-	PRIMARY KEY("regions","scenario","t_periods","t_season","t_day","input_comm","tech","vintage","output_comm")
+	FOREIGN KEY("output_comm") REFERENCES "commodities"("comm_name")
 );
-CREATE TABLE "Output_VFlow_In" (
+CREATE TABLE IF NOT EXISTS "Output_VFlow_In" (
 	"regions"	text,
 	"scenario"	text,
 	"sector"	text,
@@ -270,22 +271,43 @@ CREATE TABLE "Output_VFlow_In" (
 	"vintage"	integer,
 	"output_comm"	text,
 	"vflow_in"	real,
-	FOREIGN KEY("t_season") REFERENCES "time_periods"("t_periods"),
-	FOREIGN KEY("t_day") REFERENCES "time_of_day"("t_day"),
-	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods"),
+	PRIMARY KEY("regions","scenario","t_periods","t_season","t_day","input_comm","tech","vintage","output_comm"),
 	FOREIGN KEY("output_comm") REFERENCES "commodities"("comm_name"),
-	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	FOREIGN KEY("t_day") REFERENCES "time_of_day"("t_day"),
+	FOREIGN KEY("t_season") REFERENCES "time_periods"("t_periods"),
 	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
 	FOREIGN KEY("input_comm") REFERENCES "commodities"("comm_name"),
-	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
-	PRIMARY KEY("regions","scenario","t_periods","t_season","t_day","input_comm","tech","vintage","output_comm")
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector")
 );
-CREATE TABLE "Output_Objective" (
+
+CREATE TABLE IF NOT EXISTS "Output_VStorageSOC" (
+	"regions"	text,
+	"scenario"	text,
+	"sector"	text,
+	"t_periods"	integer,
+	"t_season"	text,
+	"t_day"	text,
+	"tech"	text,
+	"vintage"	integer,
+	"level"	real,
+	PRIMARY KEY("regions","scenario","t_periods","t_season","t_day","tech","vintage"),
+	FOREIGN KEY("t_day") REFERENCES "time_of_day"("t_day"),
+	FOREIGN KEY("t_season") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector")
+);
+
+
+CREATE TABLE IF NOT EXISTS "Output_Objective" (
 	"scenario"	text,
 	"objective_name"	text,
 	"total_system_cost"	real
 );
-CREATE TABLE "Output_Emissions" (
+CREATE TABLE IF NOT EXISTS "Output_Emissions" (
 	"regions"	text,
 	"scenario"	text,
 	"sector"	text,
@@ -295,11 +317,11 @@ CREATE TABLE "Output_Emissions" (
 	"vintage"	integer,
 	"emissions"	real,
 	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
-	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods"),
+	PRIMARY KEY("regions","scenario","t_periods","emissions_comm","tech","vintage"),
+	FOREIGN KEY("emissions_comm") REFERENCES "commodities"("comm_name"),
 	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
-	FOREIGN KEY("emissions_comm") REFERENCES "EmissionActivity"("emis_comm"),
 	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
-	PRIMARY KEY("regions","scenario","t_periods","emissions_comm","tech","vintage")
+	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods")
 );
 CREATE TABLE IF NOT EXISTS "Output_Employment" (
 	"regions"	text,
@@ -318,14 +340,16 @@ CREATE TABLE IF NOT EXISTS "Output_Employment" (
 CREATE TABLE "Output_ImplicitEmissionsPrice" (
 	"regions"	text,
 	"scenario"	text,
+	"sector"	text,
 	"t_periods"	integer,
 	"emissions_comm"	text,
 	"emissions_price"	real,
 	PRIMARY KEY("regions","scenario","t_periods","emissions_comm"),
-	FOREIGN KEY("emissions_comm") REFERENCES "EmissionActivity"("emis_comm"),
+	FOREIGN KEY("emissions_comm") REFERENCES "commodities"("comm_name"),
+	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
 	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods")
 );
-CREATE TABLE "Output_Curtailment" (
+CREATE TABLE IF NOT EXISTS "Output_Curtailment" (
 	"regions"	text,
 	"scenario"	text,
 	"sector"	text,
@@ -337,16 +361,16 @@ CREATE TABLE "Output_Curtailment" (
 	"vintage"	integer,
 	"output_comm"	text,
 	"curtailment"	real,
-	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	PRIMARY KEY("regions","scenario","t_periods","t_season","t_day","input_comm","tech","vintage","output_comm"),
 	FOREIGN KEY("output_comm") REFERENCES "commodities"("comm_name"),
-	FOREIGN KEY("input_comm") REFERENCES "commodities"("comm_name"),
-	FOREIGN KEY("t_season") REFERENCES "time_periods"("t_periods"),
 	FOREIGN KEY("t_day") REFERENCES "time_of_day"("t_day"),
+	FOREIGN KEY("input_comm") REFERENCES "commodities"("comm_name"),
 	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods"),
 	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
-	PRIMARY KEY("regions","scenario","t_periods","t_season","t_day","input_comm","tech","vintage","output_comm")
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	FOREIGN KEY("t_season") REFERENCES "time_periods"("t_periods")
 );
-CREATE TABLE "Output_Costs" (
+CREATE TABLE IF NOT EXISTS "Output_Costs" (
 	"regions"	text,
 	"scenario"	text,
 	"sector"	text,
@@ -354,10 +378,10 @@ CREATE TABLE "Output_Costs" (
 	"tech"	text,
 	"vintage"	integer,
 	"output_cost"	real,
-	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
 	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
 	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods"),
-	PRIMARY KEY("regions","scenario","output_name","tech","vintage")
+	PRIMARY KEY("regions","scenario","output_name","tech","vintage"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
 );
 CREATE TABLE "Output_Duals" (
 	"constraint_name"	text,
@@ -365,17 +389,17 @@ CREATE TABLE "Output_Duals" (
 	"dual"	real,
 	PRIMARY KEY("constraint_name","scenario")
 );
-CREATE TABLE "Output_CapacityByPeriodAndTech" (
+CREATE TABLE IF NOT EXISTS "Output_CapacityByPeriodAndTech" (
 	"regions"	text,
 	"scenario"	text,
 	"sector"	text,
 	"t_periods"	integer,
 	"tech"	text,
 	"capacity"	real,
-	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	PRIMARY KEY("regions","scenario","t_periods","tech"),
 	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
 	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
-	PRIMARY KEY("regions","scenario","t_periods","tech")
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
 );
 CREATE TABLE "MyopicBaseyear" (
 	"year"	real
@@ -423,6 +447,9 @@ CREATE TABLE "MinActivity" (
 	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
 	PRIMARY KEY("regions","periods","tech")
 );
+
+
+
 CREATE TABLE IF NOT EXISTS "MinSeasonalActivity" (
 	"regions"	text,
 	"periods"	integer,
@@ -436,6 +463,201 @@ CREATE TABLE IF NOT EXISTS "MinSeasonalActivity" (
 	FOREIGN KEY("season_name") REFERENCES "time_season"("t_season"),
 	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
 );
+
+
+
+
+
+
+CREATE TABLE IF NOT EXISTS "MinAnnualCapacityFactor" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"min_acf"	real,
+	"source" text,
+	"min_acf_notes"	text,
+	PRIMARY KEY("regions","periods","tech"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+);
+
+
+CREATE TABLE IF NOT EXISTS "MaxAnnualCapacityFactor" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"max_acf"	real,
+	"source" text,
+	"max_acf_notes"	text,
+	PRIMARY KEY("regions","periods","tech"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "MinNewCapacity" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"mincap"	real,
+	"mincap_units"	text,
+	"mincap_notes"	text,
+	PRIMARY KEY("regions","periods","tech"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+);
+
+
+CREATE TABLE IF NOT EXISTS "MaxNewCapacity" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"maxcap"	real,
+	"maxcap_units"	text,
+	"maxcap_notes"	text,
+	PRIMARY KEY("regions","periods","tech"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+);
+
+
+
+
+CREATE TABLE IF NOT EXISTS "MinActivityGroup" (
+	"regions"	text,
+	"t_periods"	integer,
+	"group_name"	text,
+	"min_act_g"	real,
+	"notes"	text,
+	PRIMARY KEY("regions","t_periods","group_name"),
+	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+
+
+CREATE TABLE IF NOT EXISTS "MaxActivityGroup" (
+	"regions"	text,
+	"t_periods"	integer,
+	"group_name"	text,
+	"max_act_g"	real,
+	"notes"	text,
+	PRIMARY KEY("regions","t_periods","group_name"),
+	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+
+CREATE TABLE IF NOT EXISTS "MinCapacityGroup" (
+	"regions"	text,
+	"t_periods"	integer,
+	"group_name"	text,
+	"min_cap_g"	real,
+	"notes"	text,
+	PRIMARY KEY("regions","t_periods","group_name"),
+	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+
+
+CREATE TABLE IF NOT EXISTS "MaxCapacityGroup" (
+	"regions"	text,
+	"t_periods"	integer,
+	"group_name"	text,
+	"max_cap_g"	real,
+	"notes"	text,
+	PRIMARY KEY("regions","t_periods","group_name"),
+	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+
+
+CREATE TABLE IF NOT EXISTS "MinCapacityShare" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"group_name" text,
+	"mincapshare"	real,
+	"mincapshare_notes"	text,
+	PRIMARY KEY("regions","periods","tech","group_name"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+
+
+
+CREATE TABLE IF NOT EXISTS "MaxCapacityShare" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"group_name" text,
+	"maxcapshare"	real,
+	"maxcapshare_notes"	text,
+	PRIMARY KEY("regions","periods","tech","group_name"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+
+
+CREATE TABLE IF NOT EXISTS "MaxNewCapacityShare" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"group_name" text,
+	"maxcapshare"	real,
+	"maxcapshare_notes"	text,
+	PRIMARY KEY("regions","periods","tech","group_name"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+
+
+CREATE TABLE IF NOT EXISTS "MinNewCapacityShare" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"group_name" text,
+	"maxcapshare"	real,
+	"maxcapshare_notes"	text,
+	PRIMARY KEY("regions","periods","tech","group_name"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+
+
+
+
+
+CREATE TABLE IF NOT EXISTS "MaxNewCapacity" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"maxnewcap"	real,
+	"maxnewcap_units"	text,
+	"maxnewcap_notes"	text,
+	PRIMARY KEY("regions","periods","tech"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+);
+
+
+CREATE TABLE IF NOT EXISTS "MinNewCapacity" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"maxnewcap"	real,
+	"maxnewcap_units"	text,
+	"maxnewcap_notes"	text,
+	PRIMARY KEY("regions","periods","tech"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+);
+
+
+
 
 CREATE TABLE "MaxCapacity" (
 	"regions"	text,
@@ -588,17 +810,20 @@ INSERT INTO `ExistingCapacity` VALUES ('utopia','TXD',1970,0.4,'','');
 INSERT INTO `ExistingCapacity` VALUES ('utopia','TXD',1980,0.2,'','');
 INSERT INTO `ExistingCapacity` VALUES ('utopia','TXG',1970,3.1,'','');
 INSERT INTO `ExistingCapacity` VALUES ('utopia','TXG',1980,1.5,'','');
-CREATE TABLE "EmissionLimit" (
+CREATE TABLE IF NOT EXISTS "EmissionLimit" (
 	"regions"	text,
+	"sector" text,
 	"periods"	integer,
 	"emis_comm"	text,
 	"emis_limit"	real,
 	"emis_limit_units"	text,
 	"emis_limit_notes"	text,
+	PRIMARY KEY("regions","periods","sector","emis_comm"),
+	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
 	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
-	FOREIGN KEY("emis_comm") REFERENCES "commodities"("comm_name"),
-	PRIMARY KEY("regions","periods","emis_comm")
+	FOREIGN KEY("emis_comm") REFERENCES "commodities"("comm_name")
 );
+
 CREATE TABLE "EmissionActivity" (
 	"regions"	text,
 	"emis_comm"	text,
@@ -733,28 +958,60 @@ CREATE TABLE "DiscountRate" (
 	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods"),
 	PRIMARY KEY("regions","tech","vintage")
 );
-CREATE TABLE "DemandSpecificDistribution" (
+CREATE TABLE IF NOT EXISTS "DemandSpecificDistribution" (
 	"regions"	text,
+	"periods"	integer,
 	"season_name"	text,
 	"time_of_day_name"	text,
 	"demand_name"	text,
-	"dds"	real CHECK("dds" >= 0 AND "dds" <= 1),
-	"dds_notes"	text,
-	FOREIGN KEY("demand_name") REFERENCES "commodities"("comm_name"),
-	FOREIGN KEY("time_of_day_name") REFERENCES "time_of_day"("t_day"),
+	"dsd"	real CHECK("dsd" >= 0 AND "dsd" <= 1),
+	"dsd_notes"	text,
+	PRIMARY KEY("regions","periods","season_name","time_of_day_name","demand_name"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods")
 	FOREIGN KEY("season_name") REFERENCES "time_season"("t_season"),
-	PRIMARY KEY("regions","season_name","time_of_day_name","demand_name")
+	FOREIGN KEY("time_of_day_name") REFERENCES "time_of_day"("t_day"),
+	FOREIGN KEY("demand_name") REFERENCES "commodities"("comm_name")
 );
-INSERT INTO `DemandSpecificDistribution` VALUES ('utopia','inter','day','RH',0.12,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('utopia','inter','night','RH',0.06,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('utopia','winter','day','RH',0.5467,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('utopia','winter','night','RH',0.2733,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('utopia','inter','day','RL',0.15,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('utopia','inter','night','RL',0.05,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('utopia','summer','day','RL',0.15,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('utopia','summer','night','RL',0.05,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('utopia','winter','day','RL',0.5,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('utopia','winter','night','RL',0.1,'');
+
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',1990,'inter','day','RH',0.12,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',1990,'inter','night','RH',0.06,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',1990,'winter','day','RH',0.5467,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',1990,'winter','night','RH',0.2733,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',1990,'summer','day','RH',0.0,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',1990,'summer','night','RH',0.0,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',1990,'inter','day','RL',0.15,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',1990,'inter','night','RL',0.05,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',1990,'summer','day','RL',0.15,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',1990,'summer','night','RL',0.05,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',1990,'winter','day','RL',0.5,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',1990,'winter','night','RL',0.1,'');
+
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2000,'inter','day','RH',0.12,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2000,'inter','night','RH',0.06,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2000,'winter','day','RH',0.5467,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2000,'winter','night','RH',0.2733,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2000,'summer','day','RH',0.0,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2000,'summer','night','RH',0.0,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2000,'inter','day','RL',0.15,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2000,'inter','night','RL',0.05,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2000,'summer','day','RL',0.15,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2000,'summer','night','RL',0.05,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2000,'winter','day','RL',0.5,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2000,'winter','night','RL',0.1,'');
+
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2010,'inter','day','RH',0.12,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2010,'inter','night','RH',0.06,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2010,'winter','day','RH',0.5467,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2010,'winter','night','RH',0.2733,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2010,'summer','day','RH',0.0,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2010,'summer','night','RH',0.0,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2010,'inter','day','RL',0.15,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2010,'inter','night','RL',0.05,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2010,'summer','day','RL',0.15,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2010,'summer','night','RL',0.05,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2010,'winter','day','RL',0.5,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('utopia',2010,'winter','night','RL',0.1,'');
+
 CREATE TABLE "Demand" (
 	"regions"	text,
 	"periods"	integer,

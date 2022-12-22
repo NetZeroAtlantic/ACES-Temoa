@@ -86,6 +86,15 @@ RL
 TX
 ;
 
+set sector_labels := 
+supply
+electric
+transport
+commercial
+residential
+industrial
+;
+
 param SegFrac := 
     inter             day         0.1667    
     inter             night         0.0833    
@@ -96,16 +105,42 @@ param SegFrac :=
 ;
 
 param DemandSpecificDistribution := 
-    utopia             inter             day             RH         0.12    
-    utopia             inter             night             RH         0.06    
-    utopia             winter             day             RH         0.5467    
-    utopia             winter             night             RH         0.2733    
-    utopia             inter             day             RL         0.15    
-    utopia             inter             night             RL         0.05    
-    utopia             summer             day             RL         0.15    
-    utopia             summer             night             RL         0.05    
-    utopia             winter             day             RL         0.5    
-    utopia             winter             night             RL         0.1    
+    utopia         1990         inter             day             RH         0.12    
+    utopia         1990         inter             night             RH         0.06    
+    utopia         1990         winter             day             RH         0.5467    
+    utopia         1990         winter             night             RH         0.2733    
+    utopia         1990         summer             day             RH         0.0    
+    utopia         1990         summer             night             RH         0.0    
+    utopia         1990         inter             day             RL         0.15    
+    utopia         1990         inter             night             RL         0.05    
+    utopia         1990         summer             day             RL         0.15    
+    utopia         1990         summer             night             RL         0.05    
+    utopia         1990         winter             day             RL         0.5    
+    utopia         1990         winter             night             RL         0.1    
+    utopia         2000         inter             day             RH         0.12    
+    utopia         2000         inter             night             RH         0.06    
+    utopia         2000         winter             day             RH         0.5467    
+    utopia         2000         winter             night             RH         0.2733    
+    utopia         2000         summer             day             RH         0.0    
+    utopia         2000         summer             night             RH         0.0    
+    utopia         2000         inter             day             RL         0.15    
+    utopia         2000         inter             night             RL         0.05    
+    utopia         2000         summer             day             RL         0.15    
+    utopia         2000         summer             night             RL         0.05    
+    utopia         2000         winter             day             RL         0.5    
+    utopia         2000         winter             night             RL         0.1    
+    utopia         2010         inter             day             RH         0.12    
+    utopia         2010         inter             night             RH         0.06    
+    utopia         2010         winter             day             RH         0.5467    
+    utopia         2010         winter             night             RH         0.2733    
+    utopia         2010         summer             day             RH         0.0    
+    utopia         2010         summer             night             RH         0.0    
+    utopia         2010         inter             day             RL         0.15    
+    utopia         2010         inter             night             RL         0.05    
+    utopia         2010         summer             day             RL         0.15    
+    utopia         2010         summer             night             RL         0.05    
+    utopia         2010         winter             day             RL         0.5    
+    utopia         2010         winter             night             RL         0.1    
 ;
 
 param CapacityToActivity := 
@@ -142,10 +177,6 @@ param EmissionActivity :=
     utopia             nox             GSL             TXG         1990         TX         1.0    
     utopia             nox             GSL             TXG         2000         TX         1.0    
     utopia             nox             GSL             TXG         2010         TX         1.0    
-;
-
-param EmissionLimit := 
-    utopia         1990         co2         999.9    
 ;
 
 param Demand := 
@@ -537,5 +568,27 @@ param CostVariable :=
     utopia         2010         SRE         1990     10.0    
     utopia         2010         SRE         2000     10.0    
     utopia         2010         SRE         2010     10.0    
+;
+
+set tech_to_sector :=
+IMPDSL1	supply
+IMPGSL1	supply
+IMPHCO1	supply
+IMPOIL1	supply
+IMPURN1	supply
+IMPFEQ	supply
+IMPHYD	supply
+E01	electric
+E21	electric
+E31	electric
+E51	electric
+E70	electric
+RHE	residential
+RHO	residential
+RL1	residential
+SRE	supply
+TXD	transport
+TXE	transport
+TXG	transport
 ;
 
