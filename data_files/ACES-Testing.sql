@@ -326,6 +326,12 @@ CREATE TABLE "tech_flex" (
 	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
 );
 
+CREATE TABLE IF NOT EXISTS "tech_variable" (
+	"tech"	text,
+	"notes"	TEXT,
+	PRIMARY KEY("tech"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+);
 
 CREATE TABLE IF NOT EXISTS "tech_annual" (
 	"tech"	text,
@@ -335,9 +341,6 @@ CREATE TABLE IF NOT EXISTS "tech_annual" (
 );
 
 
-
-
-
 CREATE TABLE IF NOT EXISTS "tech_mga" (
 	"tech"	text,
 	"notes"	TEXT,
@@ -345,26 +348,23 @@ CREATE TABLE IF NOT EXISTS "tech_mga" (
 	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
 );
 
-
 CREATE TABLE IF NOT EXISTS "tech_groups" (
+	"region" text,
+	"group_name" text,
+	"tech"	text,
+	"notes"	TEXT,
+	PRIMARY KEY("region", "group_name", "tech"),
+	FOREIGN KEY("region") REFERENCES "regions"("regions"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+
+CREATE TABLE IF NOT EXISTS "tech_asynchronous" (
 	"tech"	text,
 	"notes"	TEXT,
 	PRIMARY KEY("tech")--,
 	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
 );
-
---INSERT INTO "tech_groups" VALUES ('E_HYDRO-DSP_EX','NS-RPS');
---INSERT INTO "tech_groups" VALUES ('E_HYDRO-LIMDSP_EX','NS-RPS');
---INSERT INTO "tech_groups" VALUES ('E_WIND-ON_EX','NS-RPS');
---INSERT INTO "tech_groups" VALUES ('E_WIND-ON-1','NS-RPS');
---INSERT INTO "tech_groups" VALUES ('E_WIND-ON-2','NS-RPS');
---INSERT INTO "tech_groups" VALUES ('E_WIND-ON-3','NS-RPS');
---INSERT INTO "tech_groups" VALUES ('E_WIND-ON-4','NS-RPS');
---INSERT INTO "tech_groups" VALUES ('E_WIND-OFF','NS-RPS');
---INSERT INTO "tech_groups" VALUES ('E_SOLPV-CEN','NS-RPS');
---INSERT INTO "tech_groups" VALUES ('E_SOLPV-RES','NS-RPS');
---INSERT INTO "tech_groups" VALUES ('E_TRANS_EX','NS-RPS');
---INSERT INTO "tech_groups" VALUES ('E_TRANS','NS-RPS');
 
 CREATE TABLE IF NOT EXISTS "sector_labels" (
 	"sector"	text,
@@ -426,8 +426,6 @@ CREATE TABLE IF NOT EXISTS "groups" (
 	"notes"	text,
 	PRIMARY KEY("group_name")
 );
-
---INSERT INTO `groups` VALUES ('NS-RPS','');
 
 
 
@@ -629,7 +627,18 @@ INSERT INTO `TechInputSplit` VALUES ('NS', 2050,'E_NG-PREH2','H2_BLND_NG_E',    
 
 
 
-
+CREATE TABLE IF NOT EXISTS "TechInputSplitAverage" (
+	"regions"	TEXT,
+	"periods"	integer,
+	"input_comm"	text,
+	"tech"	text,
+	"ti_split"	real CHECK("ti_split" < 1.0),
+	"ti_split_notes"	text,
+	PRIMARY KEY("regions","periods","input_comm","tech"),
+	FOREIGN KEY("input_comm") REFERENCES "commodities"("comm_name"),
+	FOREIGN KEY("tech") REFERENCES "tech_variable"("tech"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods")
+);
 
 
 
@@ -737,6 +746,25 @@ CREATE TABLE IF NOT EXISTS "Output_VFlow_In" (
 	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods"),
 	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector")
 );
+CREATE TABLE IF NOT EXISTS "Output_VStorageSOC" (
+	"regions"	text,
+	"scenario"	text,
+	"sector"	text,
+	"t_periods"	integer,
+	"t_season"	text,
+	"t_day"	text,
+	"tech"	text,
+	"vintage"	integer,
+	"level"	real,
+	PRIMARY KEY("regions","scenario","t_periods","t_season","t_day","tech","vintage"),
+	FOREIGN KEY("t_day") REFERENCES "time_of_day"("t_day"),
+	FOREIGN KEY("t_season") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector")
+);
+
 CREATE TABLE IF NOT EXISTS "Output_Objective" (
 	"scenario"	text,
 	"objective_name"	text,
@@ -772,14 +800,16 @@ CREATE TABLE IF NOT EXISTS "Output_Employment" (
 	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
 	FOREIGN KEY("vintage") REFERENCES "time_periods"("t_periods")
 );
-CREATE TABLE "Output_ImplicitEmissionsPrice" (
+CREATE TABLE IF NOT EXISTS "Output_ImplicitEmissionsPrice" (
 	"regions"	text,
 	"scenario"	text,
+	"sector"	text,
 	"t_periods"	integer,
 	"emissions_comm"	text,
 	"emissions_price"	real,
 	PRIMARY KEY("regions","scenario","t_periods","emissions_comm"),
-	FOREIGN KEY("emissions_comm") REFERENCES "EmissionActivity"("emis_comm"),
+	FOREIGN KEY("emissions_comm") REFERENCES "commodities"("comm_name"),
+	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
 	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods")
 );
 CREATE TABLE IF NOT EXISTS "Output_Curtailment" (
@@ -944,8 +974,140 @@ CREATE TABLE IF NOT EXISTS "MinSeasonalActivity" (
 );
 
 
+CREATE TABLE IF NOT EXISTS "MinAnnualCapacityFactor" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"min_acf"	real,
+	"source" text,
+	"min_acf_notes"	text,
+	PRIMARY KEY("regions","periods","tech"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+);
+CREATE TABLE IF NOT EXISTS "MaxAnnualCapacityFactor" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"max_acf"	real,
+	"source" text,
+	"max_acf_notes"	text,
+	PRIMARY KEY("regions","periods","tech"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+);
 
 
+CREATE TABLE IF NOT EXISTS "MinNewCapacity" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"mincap"	real,
+	"mincap_units"	text,
+	"mincap_notes"	text,
+	PRIMARY KEY("regions","periods","tech"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+);
+CREATE TABLE IF NOT EXISTS "MaxNewCapacity" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"maxcap"	real,
+	"maxcap_units"	text,
+	"maxcap_notes"	text,
+	PRIMARY KEY("regions","periods","tech"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+);
+CREATE TABLE IF NOT EXISTS "MinActivityGroup" (
+	"regions"	text,
+	"t_periods"	integer,
+	"group_name"	text,
+	"min_act_g"	real,
+	"notes"	text,
+	PRIMARY KEY("regions","t_periods","group_name"),
+	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+CREATE TABLE IF NOT EXISTS "MaxActivityGroup" (
+	"regions"	text,
+	"t_periods"	integer,
+	"group_name"	text,
+	"max_act_g"	real,
+	"notes"	text,
+	PRIMARY KEY("regions","t_periods","group_name"),
+	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+CREATE TABLE IF NOT EXISTS "MinCapacityGroup" (
+	"regions"	text,
+	"t_periods"	integer,
+	"group_name"	text,
+	"min_cap_g"	real,
+	"notes"	text,
+	PRIMARY KEY("regions","t_periods","group_name"),
+	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+CREATE TABLE IF NOT EXISTS "MaxCapacityGroup" (
+	"regions"	text,
+	"t_periods"	integer,
+	"group_name"	text,
+	"max_cap_g"	real,
+	"notes"	text,
+	PRIMARY KEY("regions","t_periods","group_name"),
+	FOREIGN KEY("t_periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+CREATE TABLE IF NOT EXISTS "MinCapacityShare" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"group_name" text,
+	"mincapshare"	real,
+	"mincapshare_notes"	text,
+	PRIMARY KEY("regions","periods","tech","group_name"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+CREATE TABLE IF NOT EXISTS "MaxCapacityShare" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"group_name" text,
+	"maxcapshare"	real,
+	"maxcapshare_notes"	text,
+	PRIMARY KEY("regions","periods","tech","group_name"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+CREATE TABLE IF NOT EXISTS "MaxNewCapacityShare" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"group_name" text,
+	"maxcapshare"	real,
+	"maxcapshare_notes"	text,
+	PRIMARY KEY("regions","periods","tech","group_name"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+CREATE TABLE IF NOT EXISTS "MinNewCapacityShare" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"group_name" text,
+	"maxcapshare"	real,
+	"maxcapshare_notes"	text,
+	PRIMARY KEY("regions","periods","tech","group_name"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
 
 CREATE TABLE IF NOT EXISTS "MaxCapacity" (
 	"regions"	text,
@@ -1875,35 +2037,17 @@ INSERT INTO `ExistingCapacity` VALUES ('LAB-NL','E_TRANS_EX',1900,0.9,'GW','');
 
 CREATE TABLE IF NOT EXISTS "EmissionLimit" (
 	"regions"	text,
+	"sector" text,
 	"periods"	integer,
 	"emis_comm"	text,
 	"emis_limit"	real,
 	"emis_limit_units"	text,
 	"emis_limit_notes"	text,
-	PRIMARY KEY("regions","periods","emis_comm"),
+	PRIMARY KEY("regions","periods","sector","emis_comm"),
+	FOREIGN KEY("sector") REFERENCES "sector_labels"("sector"),
 	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
 	FOREIGN KEY("emis_comm") REFERENCES "commodities"("comm_name")
 );
-
----- NS Provincial Policy ----
-/*
-INSERT INTO "EmissionLimit" VALUES ('NS',2020,'CO2e',5200,'kt','NS IRP 2020 pp 92.');
-INSERT INTO "EmissionLimit" VALUES ('NS',2030,'CO2e',3900,'kt','NS IRP 2020 pp 92.');
-INSERT INTO "EmissionLimit" VALUES ('NS',2040,'CO2e',2300,'kt','NS IRP 2020 pp 92.');
-INSERT INTO "EmissionLimit" VALUES ('NS',2050,'CO2e',0.0, 'kt','NS IRP 2020 pp 92.');
-
-INSERT INTO "EmissionLimit" VALUES ('NS',2020,'NOX',14.0,'kt','NS IRP Assumptions Set pp 23.');
-INSERT INTO "EmissionLimit" VALUES ('NS',2030,'NOX',8.8,'kt', 'NS IRP Assumptions Set pp 23.');
-INSERT INTO "EmissionLimit" VALUES ('NS',2040,'NOX',8.8,'kt', 'NS IRP Assumptions Set pp 23.');
-INSERT INTO "EmissionLimit" VALUES ('NS',2050,'NOX',8.8,'kt', 'NS IRP Assumptions Set pp 23.');
-
-INSERT INTO "EmissionLimit" VALUES ('NS',2020,'SO2',45.0,'kt','NS IRP Assumptions Set pp 24.');
-INSERT INTO "EmissionLimit" VALUES ('NS',2030,'SO2',20.0,'kt','NS IRP Assumptions Set pp 24.');
-INSERT INTO "EmissionLimit" VALUES ('NS',2040,'SO2',15.0,'kt','NS IRP Assumptions Set pp 24.');
-INSERT INTO "EmissionLimit" VALUES ('NS',2050,'SO2',15.0,'kt','NS IRP Assumptions Set pp 24.');
-
-INSERT INTO "EmissionLimit" VALUES ('NS',2020,'Hg',0.045,'kt','NS IRP Assumptions Set pp 26.');
-*/
 
 
 
@@ -2274,7 +2418,24 @@ INSERT INTO `EmissionActivity` VALUES ('NS','CO2e','E_NG','CO2_CAPTURE-NGA-1STGE
 
 
 
-
+CREATE TABLE IF NOT EXISTS "OutputBasedStandard" (
+	"regions"	text,
+	"period"	integer,
+	"emis_comm"	text,
+	"input_comm"	text,
+	"tech"	text,
+	"output_comm"	text,
+	"offset"	real,
+	"offset_units"	text,
+  "source" text,
+	"notes"	text,
+	PRIMARY KEY("regions","emis_comm","input_comm","tech","period","output_comm"),
+	FOREIGN KEY("period") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("input_comm") REFERENCES "commodities"("comm_name"),
+	FOREIGN KEY("output_comm") REFERENCES "commodities"("comm_name"),
+	FOREIGN KEY("emis_comm") REFERENCES "commodities"("comm_name"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+);
 
 
 
@@ -2970,7 +3131,23 @@ INSERT INTO `Efficiency` VALUES ('NL', 'CO2_TO_GROUND', 'CO2_TRNSPSEQ',        2
 
 
 
-
+CREATE TABLE IF NOT EXISTS "EfficiencyVariable" (
+	"regions"	text,
+	"input_comm"	text,
+	"tech"	text,
+	"season_name"	text,
+	"time_of_day_name"	text,
+	"output_comm"	text,
+	"efficiencyvar"	real CHECK("efficiencyvar" > 0),
+	"source"	text,
+	"eff_notes"	text,
+	PRIMARY KEY("regions","input_comm","tech","season_name","time_of_day_name","output_comm"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	FOREIGN KEY("season_name") REFERENCES "time_season"("t_season"),
+	FOREIGN KEY("output_comm") REFERENCES "commodities"("comm_name"),
+	FOREIGN KEY("time_of_day_name") REFERENCES "time_of_day"("t_day"),
+	FOREIGN KEY("input_comm") REFERENCES "commodities"("comm_name")
+);
 
 
 
@@ -3996,12 +4173,14 @@ INSERT INTO `DiscountRate` VALUES ('NS','CO2_CAPTURE-NGA-1STGEN',				2050,0.125,
 
 CREATE TABLE IF NOT EXISTS "DemandSpecificDistribution" (
 	"regions"	text,
+	"periods"	integer,
 	"season_name"	text,
 	"time_of_day_name"	text,
 	"demand_name"	text,
-	"dds"	real CHECK("dds" >= 0 AND "dds" <= 1),
-	"dds_notes"	text,
-	PRIMARY KEY("regions","season_name","time_of_day_name","demand_name"),
+	"dsd"	real CHECK("dsd" >= 0 AND "dsd" <= 1),
+	"dsd_notes"	text,
+	PRIMARY KEY("regions","periods","season_name","time_of_day_name","demand_name"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods")
 	FOREIGN KEY("season_name") REFERENCES "time_season"("t_season"),
 	FOREIGN KEY("time_of_day_name") REFERENCES "time_of_day"("t_day"),
 	FOREIGN KEY("demand_name") REFERENCES "commodities"("comm_name")
@@ -4654,7 +4833,19 @@ INSERT INTO `CostVariable` VALUES ('NS', 2050, 'SNGSYN',              2050, 5.94
 
 
 
-
+CREATE TABLE IF NOT EXISTS "CostVariableVariable" (
+	"regions"	text,
+	"tech"	text,
+	"season_name"	text,
+	"time_of_day_name"	text,
+	"costvarvar"	real,
+	"source"	text,
+	"eff_notes"	text,
+	FOREIGN KEY("season_name") REFERENCES "time_season"("t_season"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	FOREIGN KEY("time_of_day_name") REFERENCES "time_of_day"("t_day"),
+	PRIMARY KEY("regions","tech","season_name","time_of_day_name")
+);
 
 
 
@@ -7181,368 +7372,1452 @@ INSERT INTO `SegFrac` VALUES ('12-17','H23',0.012747,'');
 
 
 
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H00','D_ELEC', 0.000775,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H01','D_ELEC', 0.000761,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H02','D_ELEC', 0.000758,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H03','D_ELEC', 0.000762,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H04','D_ELEC', 0.000768,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H05','D_ELEC', 0.000783,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H06','D_ELEC', 0.000808,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H07','D_ELEC', 0.000870,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H08','D_ELEC', 0.000933,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H09','D_ELEC', 0.000934,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H10','D_ELEC', 0.000917,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H11','D_ELEC', 0.000894,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H12','D_ELEC', 0.000863,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H13','D_ELEC', 0.000828,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H14','D_ELEC', 0.000806,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H15','D_ELEC', 0.000771,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H16','D_ELEC', 0.000760,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H17','D_ELEC', 0.000775,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H18','D_ELEC', 0.000785,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H19','D_ELEC', 0.000776,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H20','D_ELEC', 0.000755,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H21','D_ELEC', 0.000733,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H22','D_ELEC', 0.000706,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','01-18','H23','D_ELEC', 0.000673,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H00','D_ELEC', 0.023576,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H01','D_ELEC', 0.022659,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H02','D_ELEC', 0.022574,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H03','D_ELEC', 0.022302,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H04','D_ELEC', 0.022489,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H05','D_ELEC', 0.022829,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H06','D_ELEC', 0.023797,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H07','D_ELEC', 0.025700,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H08','D_ELEC', 0.026396,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H09','D_ELEC', 0.026260,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H10','D_ELEC', 0.026447,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H11','D_ELEC', 0.026005,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H12','D_ELEC', 0.025326,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H13','D_ELEC', 0.024884,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H14','D_ELEC', 0.024171,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H15','D_ELEC', 0.023950,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H16','D_ELEC', 0.023984,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H17','D_ELEC', 0.023865,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H18','D_ELEC', 0.023712,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H19','D_ELEC', 0.023678,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H20','D_ELEC', 0.024018,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H21','D_ELEC', 0.024307,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H22','D_ELEC', 0.023508,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','05-11','H23','D_ELEC', 0.022523,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H00','D_ELEC', 0.016087,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H01','D_ELEC', 0.015583,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H02','D_ELEC', 0.015355,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H03','D_ELEC', 0.015408,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H04','D_ELEC', 0.015454,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H05','D_ELEC', 0.015675,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H06','D_ELEC', 0.016262,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H07','D_ELEC', 0.017658,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H08','D_ELEC', 0.018940,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H09','D_ELEC', 0.018429,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H10','D_ELEC', 0.017979,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H11','D_ELEC', 0.017483,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H12','D_ELEC', 0.016804,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H13','D_ELEC', 0.016415,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H14','D_ELEC', 0.016483,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H15','D_ELEC', 0.016560,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H16','D_ELEC', 0.016682,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H17','D_ELEC', 0.017323,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H18','D_ELEC', 0.017666,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H19','D_ELEC', 0.017422,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H20','D_ELEC', 0.017170,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H21','D_ELEC', 0.016941,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H22','D_ELEC', 0.016453,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NB','12-17','H23','D_ELEC', 0.015614,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H00','D_ELEC', 0.000763,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H01','D_ELEC', 0.000754,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H02','D_ELEC', 0.000744,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H03','D_ELEC', 0.000737,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H04','D_ELEC', 0.000735,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H05','D_ELEC', 0.000717,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H06','D_ELEC', 0.000719,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H07','D_ELEC', 0.000779,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H08','D_ELEC', 0.000818,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H09','D_ELEC', 0.000818,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H10','D_ELEC', 0.000797,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H11','D_ELEC', 0.000783,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H12','D_ELEC', 0.000769,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H13','D_ELEC', 0.000765,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H14','D_ELEC', 0.000739,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H15','D_ELEC', 0.000710,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H16','D_ELEC', 0.000694,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H17','D_ELEC', 0.000701,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H18','D_ELEC', 0.000743,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H19','D_ELEC', 0.000741,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H20','D_ELEC', 0.000729,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H21','D_ELEC', 0.000718,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H22','D_ELEC', 0.000682,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','01-18','H23','D_ELEC', 0.000664,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H00','D_ELEC', 0.024767,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H01','D_ELEC', 0.023764,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H02','D_ELEC', 0.022937,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H03','D_ELEC', 0.023951,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H04','D_ELEC', 0.023721,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H05','D_ELEC', 0.023037,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H06','D_ELEC', 0.023744,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H07','D_ELEC', 0.024670,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H08','D_ELEC', 0.026498,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H09','D_ELEC', 0.026848,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H10','D_ELEC', 0.026638,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H11','D_ELEC', 0.026065,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H12','D_ELEC', 0.025157,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H13','D_ELEC', 0.024557,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H14','D_ELEC', 0.025132,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H15','D_ELEC', 0.025075,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H16','D_ELEC', 0.025702,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H17','D_ELEC', 0.027333,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H18','D_ELEC', 0.027112,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H19','D_ELEC', 0.026778,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H20','D_ELEC', 0.027259,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H21','D_ELEC', 0.027147,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H22','D_ELEC', 0.025823,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','05-11','H23','D_ELEC', 0.024354,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H00','D_ELEC', 0.015050,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H01','D_ELEC', 0.014712,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H02','D_ELEC', 0.014322,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H03','D_ELEC', 0.013879,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H04','D_ELEC', 0.013779,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H05','D_ELEC', 0.013853,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H06','D_ELEC', 0.014321,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H07','D_ELEC', 0.015731,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H08','D_ELEC', 0.016873,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H09','D_ELEC', 0.017037,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H10','D_ELEC', 0.016687,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H11','D_ELEC', 0.016417,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H12','D_ELEC', 0.015932,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H13','D_ELEC', 0.015784,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H14','D_ELEC', 0.015598,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H15','D_ELEC', 0.015527,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H16','D_ELEC', 0.015811,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H17','D_ELEC', 0.016552,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H18','D_ELEC', 0.017175,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H19','D_ELEC', 0.016906,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H20','D_ELEC', 0.016517,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H21','D_ELEC', 0.016084,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H22','D_ELEC', 0.015321,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NS','12-17','H23','D_ELEC', 0.014246,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H00','D_ELEC', 0.000629,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H01','D_ELEC', 0.000617,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H02','D_ELEC', 0.000615,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H03','D_ELEC', 0.000614,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H04','D_ELEC', 0.000623,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H05','D_ELEC', 0.000648,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H06','D_ELEC', 0.000714,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H07','D_ELEC', 0.000777,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H08','D_ELEC', 0.000788,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H09','D_ELEC', 0.000780,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H10','D_ELEC', 0.000754,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H11','D_ELEC', 0.000736,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H12','D_ELEC', 0.000709,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H13','D_ELEC', 0.000701,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H14','D_ELEC', 0.000696,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H15','D_ELEC', 0.000693,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H16','D_ELEC', 0.000712,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H17','D_ELEC', 0.000751,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H18','D_ELEC', 0.000741,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H19','D_ELEC', 0.000719,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H20','D_ELEC', 0.000692,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H21','D_ELEC', 0.000657,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H22','D_ELEC', 0.000614,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','01-18','H23','D_ELEC', 0.000578,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H00','D_ELEC', 0.021649,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H01','D_ELEC', 0.020672,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H02','D_ELEC', 0.020887,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H03','D_ELEC', 0.020717,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H04','D_ELEC', 0.020805,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H05','D_ELEC', 0.021529,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H06','D_ELEC', 0.022825,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H07','D_ELEC', 0.025011,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H08','D_ELEC', 0.028410,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H09','D_ELEC', 0.029497,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H10','D_ELEC', 0.030016,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H11','D_ELEC', 0.028719,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H12','D_ELEC', 0.026392,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H13','D_ELEC', 0.027495,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H14','D_ELEC', 0.027475,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H15','D_ELEC', 0.025555,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H16','D_ELEC', 0.025714,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H17','D_ELEC', 0.026914,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H18','D_ELEC', 0.026680,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H19','D_ELEC', 0.025919,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H20','D_ELEC', 0.025943,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H21','D_ELEC', 0.026707,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H22','D_ELEC', 0.025596,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','05-11','H23','D_ELEC', 0.023979,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H00','D_ELEC', 0.014468,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H01','D_ELEC', 0.014019,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H02','D_ELEC', 0.013768,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H03','D_ELEC', 0.013723,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H04','D_ELEC', 0.013870,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H05','D_ELEC', 0.014353,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H06','D_ELEC', 0.015888,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H07','D_ELEC', 0.017685,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H08','D_ELEC', 0.017680,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H09','D_ELEC', 0.017003,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H10','D_ELEC', 0.016399,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H11','D_ELEC', 0.015874,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H12','D_ELEC', 0.015505,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H13','D_ELEC', 0.015337,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H14','D_ELEC', 0.015328,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H15','D_ELEC', 0.015966,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H16','D_ELEC', 0.016987,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H17','D_ELEC', 0.018035,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H18','D_ELEC', 0.017706,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H19','D_ELEC', 0.017241,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H20','D_ELEC', 0.016902,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H21','D_ELEC', 0.016423,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H22','D_ELEC', 0.014693,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('PEI','12-17','H23','D_ELEC', 0.013485,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H00','D_ELEC', 0.000775,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H01','D_ELEC', 0.000761,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H02','D_ELEC', 0.000758,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H03','D_ELEC', 0.000762,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H04','D_ELEC', 0.000768,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H05','D_ELEC', 0.000783,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H06','D_ELEC', 0.000808,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H07','D_ELEC', 0.000870,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H08','D_ELEC', 0.000933,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H09','D_ELEC', 0.000934,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H10','D_ELEC', 0.000917,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H11','D_ELEC', 0.000894,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H12','D_ELEC', 0.000863,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H13','D_ELEC', 0.000828,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H14','D_ELEC', 0.000806,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H15','D_ELEC', 0.000771,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H16','D_ELEC', 0.000760,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H17','D_ELEC', 0.000775,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H18','D_ELEC', 0.000785,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H19','D_ELEC', 0.000776,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H20','D_ELEC', 0.000755,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H21','D_ELEC', 0.000733,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H22','D_ELEC', 0.000706,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','01-18','H23','D_ELEC', 0.000673,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H00','D_ELEC', 0.023576,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H01','D_ELEC', 0.022659,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H02','D_ELEC', 0.022574,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H03','D_ELEC', 0.022302,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H04','D_ELEC', 0.022489,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H05','D_ELEC', 0.022829,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H06','D_ELEC', 0.023797,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H07','D_ELEC', 0.025700,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H08','D_ELEC', 0.026396,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H09','D_ELEC', 0.026260,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H10','D_ELEC', 0.026447,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H11','D_ELEC', 0.026005,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H12','D_ELEC', 0.025326,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H13','D_ELEC', 0.024884,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H14','D_ELEC', 0.024171,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H15','D_ELEC', 0.023950,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H16','D_ELEC', 0.023984,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H17','D_ELEC', 0.023865,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H18','D_ELEC', 0.023712,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H19','D_ELEC', 0.023678,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H20','D_ELEC', 0.024018,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H21','D_ELEC', 0.024307,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H22','D_ELEC', 0.023508,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','05-11','H23','D_ELEC', 0.022523,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H00','D_ELEC', 0.016087,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H01','D_ELEC', 0.015583,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H02','D_ELEC', 0.015355,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H03','D_ELEC', 0.015408,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H04','D_ELEC', 0.015454,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H05','D_ELEC', 0.015675,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H06','D_ELEC', 0.016262,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H07','D_ELEC', 0.017658,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H08','D_ELEC', 0.018940,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H09','D_ELEC', 0.018429,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H10','D_ELEC', 0.017979,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H11','D_ELEC', 0.017483,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H12','D_ELEC', 0.016804,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H13','D_ELEC', 0.016415,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H14','D_ELEC', 0.016483,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H15','D_ELEC', 0.016560,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H16','D_ELEC', 0.016682,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H17','D_ELEC', 0.017323,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H18','D_ELEC', 0.017666,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H19','D_ELEC', 0.017422,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H20','D_ELEC', 0.017170,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H21','D_ELEC', 0.016941,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H22','D_ELEC', 0.016453,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('NL','12-17','H23','D_ELEC', 0.015614,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H00','D_ELEC', 0.000775,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H01','D_ELEC', 0.000761,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H02','D_ELEC', 0.000758,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H03','D_ELEC', 0.000762,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H04','D_ELEC', 0.000768,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H05','D_ELEC', 0.000783,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H06','D_ELEC', 0.000808,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H07','D_ELEC', 0.000870,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H08','D_ELEC', 0.000933,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H09','D_ELEC', 0.000934,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H10','D_ELEC', 0.000917,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H11','D_ELEC', 0.000894,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H12','D_ELEC', 0.000863,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H13','D_ELEC', 0.000828,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H14','D_ELEC', 0.000806,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H15','D_ELEC', 0.000771,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H16','D_ELEC', 0.000760,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H17','D_ELEC', 0.000775,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H18','D_ELEC', 0.000785,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H19','D_ELEC', 0.000776,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H20','D_ELEC', 0.000755,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H21','D_ELEC', 0.000733,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H22','D_ELEC', 0.000706,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','01-18','H23','D_ELEC', 0.000673,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H00','D_ELEC', 0.023576,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H01','D_ELEC', 0.022659,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H02','D_ELEC', 0.022574,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H03','D_ELEC', 0.022302,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H04','D_ELEC', 0.022489,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H05','D_ELEC', 0.022829,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H06','D_ELEC', 0.023797,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H07','D_ELEC', 0.025700,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H08','D_ELEC', 0.026396,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H09','D_ELEC', 0.026260,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H10','D_ELEC', 0.026447,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H11','D_ELEC', 0.026005,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H12','D_ELEC', 0.025326,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H13','D_ELEC', 0.024884,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H14','D_ELEC', 0.024171,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H15','D_ELEC', 0.023950,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H16','D_ELEC', 0.023984,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H17','D_ELEC', 0.023865,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H18','D_ELEC', 0.023712,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H19','D_ELEC', 0.023678,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H20','D_ELEC', 0.024018,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H21','D_ELEC', 0.024307,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H22','D_ELEC', 0.023508,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','05-11','H23','D_ELEC', 0.022523,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H00','D_ELEC', 0.016087,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H01','D_ELEC', 0.015583,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H02','D_ELEC', 0.015355,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H03','D_ELEC', 0.015408,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H04','D_ELEC', 0.015454,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H05','D_ELEC', 0.015675,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H06','D_ELEC', 0.016262,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H07','D_ELEC', 0.017658,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H08','D_ELEC', 0.018940,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H09','D_ELEC', 0.018429,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H10','D_ELEC', 0.017979,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H11','D_ELEC', 0.017483,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H12','D_ELEC', 0.016804,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H13','D_ELEC', 0.016415,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H14','D_ELEC', 0.016483,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H15','D_ELEC', 0.016560,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H16','D_ELEC', 0.016682,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H17','D_ELEC', 0.017323,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H18','D_ELEC', 0.017666,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H19','D_ELEC', 0.017422,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H20','D_ELEC', 0.017170,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H21','D_ELEC', 0.016941,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H22','D_ELEC', 0.016453,'');
-INSERT INTO `DemandSpecificDistribution` VALUES ('LAB','12-17','H23','D_ELEC', 0.015614,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H00','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H01','D_ELEC', 0.000761,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H02','D_ELEC', 0.000758,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H03','D_ELEC', 0.000762,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H04','D_ELEC', 0.000768,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H05','D_ELEC', 0.000783,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H06','D_ELEC', 0.000808,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H07','D_ELEC', 0.000870,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H08','D_ELEC', 0.000933,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H09','D_ELEC', 0.000934,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H10','D_ELEC', 0.000917,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H11','D_ELEC', 0.000894,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H12','D_ELEC', 0.000863,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H13','D_ELEC', 0.000828,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H14','D_ELEC', 0.000806,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H15','D_ELEC', 0.000771,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H16','D_ELEC', 0.000760,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H17','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H18','D_ELEC', 0.000785,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H19','D_ELEC', 0.000776,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H20','D_ELEC', 0.000755,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H21','D_ELEC', 0.000733,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H22','D_ELEC', 0.000706,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '01-18','H23','D_ELEC', 0.000673,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H00','D_ELEC', 0.023576,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H01','D_ELEC', 0.022659,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H02','D_ELEC', 0.022574,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H03','D_ELEC', 0.022302,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H04','D_ELEC', 0.022489,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H05','D_ELEC', 0.022829,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H06','D_ELEC', 0.023797,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H07','D_ELEC', 0.025700,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H08','D_ELEC', 0.026396,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H09','D_ELEC', 0.026260,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H10','D_ELEC', 0.026447,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H11','D_ELEC', 0.026005,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H12','D_ELEC', 0.025326,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H13','D_ELEC', 0.024884,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H14','D_ELEC', 0.024171,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H15','D_ELEC', 0.023950,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H16','D_ELEC', 0.023984,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H17','D_ELEC', 0.023865,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H18','D_ELEC', 0.023712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H19','D_ELEC', 0.023678,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H20','D_ELEC', 0.024018,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H21','D_ELEC', 0.024307,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H22','D_ELEC', 0.023508,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '05-11','H23','D_ELEC', 0.022523,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H00','D_ELEC', 0.016087,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H01','D_ELEC', 0.015583,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H02','D_ELEC', 0.015355,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H03','D_ELEC', 0.015408,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H04','D_ELEC', 0.015454,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H05','D_ELEC', 0.015675,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H06','D_ELEC', 0.016262,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H07','D_ELEC', 0.017658,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H08','D_ELEC', 0.018940,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H09','D_ELEC', 0.018429,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H10','D_ELEC', 0.017979,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H11','D_ELEC', 0.017483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H12','D_ELEC', 0.016804,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H13','D_ELEC', 0.016415,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H14','D_ELEC', 0.016483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H15','D_ELEC', 0.016560,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H16','D_ELEC', 0.016682,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H17','D_ELEC', 0.017323,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H18','D_ELEC', 0.017666,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H19','D_ELEC', 0.017422,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H20','D_ELEC', 0.017170,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H21','D_ELEC', 0.016941,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H22','D_ELEC', 0.016453,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2020, '12-17','H23','D_ELEC', 0.015614,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H00','D_ELEC', 0.000763,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H01','D_ELEC', 0.000754,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H02','D_ELEC', 0.000744,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H03','D_ELEC', 0.000737,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H04','D_ELEC', 0.000735,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H05','D_ELEC', 0.000717,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H06','D_ELEC', 0.000719,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H07','D_ELEC', 0.000779,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H08','D_ELEC', 0.000818,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H09','D_ELEC', 0.000818,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H10','D_ELEC', 0.000797,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H11','D_ELEC', 0.000783,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H12','D_ELEC', 0.000769,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H13','D_ELEC', 0.000765,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H14','D_ELEC', 0.000739,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H15','D_ELEC', 0.000710,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H16','D_ELEC', 0.000694,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H17','D_ELEC', 0.000701,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H18','D_ELEC', 0.000743,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H19','D_ELEC', 0.000741,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H20','D_ELEC', 0.000729,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H21','D_ELEC', 0.000718,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H22','D_ELEC', 0.000682,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '01-18','H23','D_ELEC', 0.000664,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H00','D_ELEC', 0.024767,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H01','D_ELEC', 0.023764,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H02','D_ELEC', 0.022937,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H03','D_ELEC', 0.023951,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H04','D_ELEC', 0.023721,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H05','D_ELEC', 0.023037,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H06','D_ELEC', 0.023744,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H07','D_ELEC', 0.024670,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H08','D_ELEC', 0.026498,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H09','D_ELEC', 0.026848,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H10','D_ELEC', 0.026638,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H11','D_ELEC', 0.026065,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H12','D_ELEC', 0.025157,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H13','D_ELEC', 0.024557,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H14','D_ELEC', 0.025132,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H15','D_ELEC', 0.025075,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H16','D_ELEC', 0.025702,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H17','D_ELEC', 0.027333,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H18','D_ELEC', 0.027112,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H19','D_ELEC', 0.026778,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H20','D_ELEC', 0.027259,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H21','D_ELEC', 0.027147,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H22','D_ELEC', 0.025823,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '05-11','H23','D_ELEC', 0.024354,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H00','D_ELEC', 0.015050,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H01','D_ELEC', 0.014712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H02','D_ELEC', 0.014322,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H03','D_ELEC', 0.013879,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H04','D_ELEC', 0.013779,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H05','D_ELEC', 0.013853,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H06','D_ELEC', 0.014321,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H07','D_ELEC', 0.015731,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H08','D_ELEC', 0.016873,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H09','D_ELEC', 0.017037,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H10','D_ELEC', 0.016687,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H11','D_ELEC', 0.016417,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H12','D_ELEC', 0.015932,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H13','D_ELEC', 0.015784,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H14','D_ELEC', 0.015598,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H15','D_ELEC', 0.015527,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H16','D_ELEC', 0.015811,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H17','D_ELEC', 0.016552,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H18','D_ELEC', 0.017175,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H19','D_ELEC', 0.016906,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H20','D_ELEC', 0.016517,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H21','D_ELEC', 0.016084,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H22','D_ELEC', 0.015321,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2020, '12-17','H23','D_ELEC', 0.014246,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H00','D_ELEC', 0.000629,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H01','D_ELEC', 0.000617,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H02','D_ELEC', 0.000615,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H03','D_ELEC', 0.000614,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H04','D_ELEC', 0.000623,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H05','D_ELEC', 0.000648,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H06','D_ELEC', 0.000714,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H07','D_ELEC', 0.000777,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H08','D_ELEC', 0.000788,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H09','D_ELEC', 0.000780,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H10','D_ELEC', 0.000754,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H11','D_ELEC', 0.000736,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H12','D_ELEC', 0.000709,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H13','D_ELEC', 0.000701,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H14','D_ELEC', 0.000696,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H15','D_ELEC', 0.000693,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H16','D_ELEC', 0.000712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H17','D_ELEC', 0.000751,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H18','D_ELEC', 0.000741,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H19','D_ELEC', 0.000719,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H20','D_ELEC', 0.000692,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H21','D_ELEC', 0.000657,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H22','D_ELEC', 0.000614,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '01-18','H23','D_ELEC', 0.000578,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H00','D_ELEC', 0.021649,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H01','D_ELEC', 0.020672,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H02','D_ELEC', 0.020887,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H03','D_ELEC', 0.020717,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H04','D_ELEC', 0.020805,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H05','D_ELEC', 0.021529,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H06','D_ELEC', 0.022825,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H07','D_ELEC', 0.025011,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H08','D_ELEC', 0.028410,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H09','D_ELEC', 0.029497,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H10','D_ELEC', 0.030016,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H11','D_ELEC', 0.028719,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H12','D_ELEC', 0.026392,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H13','D_ELEC', 0.027495,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H14','D_ELEC', 0.027475,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H15','D_ELEC', 0.025555,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H16','D_ELEC', 0.025714,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H17','D_ELEC', 0.026914,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H18','D_ELEC', 0.026680,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H19','D_ELEC', 0.025919,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H20','D_ELEC', 0.025943,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H21','D_ELEC', 0.026707,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H22','D_ELEC', 0.025596,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '05-11','H23','D_ELEC', 0.023979,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H00','D_ELEC', 0.014468,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H01','D_ELEC', 0.014019,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H02','D_ELEC', 0.013768,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H03','D_ELEC', 0.013723,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H04','D_ELEC', 0.013870,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H05','D_ELEC', 0.014353,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H06','D_ELEC', 0.015888,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H07','D_ELEC', 0.017685,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H08','D_ELEC', 0.017680,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H09','D_ELEC', 0.017003,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H10','D_ELEC', 0.016399,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H11','D_ELEC', 0.015874,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H12','D_ELEC', 0.015505,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H13','D_ELEC', 0.015337,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H14','D_ELEC', 0.015328,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H15','D_ELEC', 0.015966,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H16','D_ELEC', 0.016987,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H17','D_ELEC', 0.018035,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H18','D_ELEC', 0.017706,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H19','D_ELEC', 0.017241,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H20','D_ELEC', 0.016902,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H21','D_ELEC', 0.016423,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H22','D_ELEC', 0.014693,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2020, '12-17','H23','D_ELEC', 0.013485,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H00','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H01','D_ELEC', 0.000761,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H02','D_ELEC', 0.000758,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H03','D_ELEC', 0.000762,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H04','D_ELEC', 0.000768,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H05','D_ELEC', 0.000783,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H06','D_ELEC', 0.000808,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H07','D_ELEC', 0.000870,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H08','D_ELEC', 0.000933,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H09','D_ELEC', 0.000934,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H10','D_ELEC', 0.000917,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H11','D_ELEC', 0.000894,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H12','D_ELEC', 0.000863,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H13','D_ELEC', 0.000828,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H14','D_ELEC', 0.000806,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H15','D_ELEC', 0.000771,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H16','D_ELEC', 0.000760,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H17','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H18','D_ELEC', 0.000785,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H19','D_ELEC', 0.000776,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H20','D_ELEC', 0.000755,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H21','D_ELEC', 0.000733,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H22','D_ELEC', 0.000706,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '01-18','H23','D_ELEC', 0.000673,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H00','D_ELEC', 0.023576,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H01','D_ELEC', 0.022659,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H02','D_ELEC', 0.022574,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H03','D_ELEC', 0.022302,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H04','D_ELEC', 0.022489,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H05','D_ELEC', 0.022829,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H06','D_ELEC', 0.023797,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H07','D_ELEC', 0.025700,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H08','D_ELEC', 0.026396,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H09','D_ELEC', 0.026260,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H10','D_ELEC', 0.026447,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H11','D_ELEC', 0.026005,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H12','D_ELEC', 0.025326,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H13','D_ELEC', 0.024884,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H14','D_ELEC', 0.024171,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H15','D_ELEC', 0.023950,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H16','D_ELEC', 0.023984,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H17','D_ELEC', 0.023865,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H18','D_ELEC', 0.023712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H19','D_ELEC', 0.023678,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H20','D_ELEC', 0.024018,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H21','D_ELEC', 0.024307,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H22','D_ELEC', 0.023508,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '05-11','H23','D_ELEC', 0.022523,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H00','D_ELEC', 0.016087,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H01','D_ELEC', 0.015583,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H02','D_ELEC', 0.015355,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H03','D_ELEC', 0.015408,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H04','D_ELEC', 0.015454,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H05','D_ELEC', 0.015675,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H06','D_ELEC', 0.016262,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H07','D_ELEC', 0.017658,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H08','D_ELEC', 0.018940,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H09','D_ELEC', 0.018429,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H10','D_ELEC', 0.017979,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H11','D_ELEC', 0.017483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H12','D_ELEC', 0.016804,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H13','D_ELEC', 0.016415,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H14','D_ELEC', 0.016483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H15','D_ELEC', 0.016560,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H16','D_ELEC', 0.016682,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H17','D_ELEC', 0.017323,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H18','D_ELEC', 0.017666,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H19','D_ELEC', 0.017422,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H20','D_ELEC', 0.017170,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H21','D_ELEC', 0.016941,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H22','D_ELEC', 0.016453,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2020, '12-17','H23','D_ELEC', 0.015614,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H00','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H01','D_ELEC', 0.000761,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H02','D_ELEC', 0.000758,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H03','D_ELEC', 0.000762,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H04','D_ELEC', 0.000768,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H05','D_ELEC', 0.000783,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H06','D_ELEC', 0.000808,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H07','D_ELEC', 0.000870,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H08','D_ELEC', 0.000933,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H09','D_ELEC', 0.000934,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H10','D_ELEC', 0.000917,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H11','D_ELEC', 0.000894,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H12','D_ELEC', 0.000863,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H13','D_ELEC', 0.000828,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H14','D_ELEC', 0.000806,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H15','D_ELEC', 0.000771,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H16','D_ELEC', 0.000760,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H17','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H18','D_ELEC', 0.000785,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H19','D_ELEC', 0.000776,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H20','D_ELEC', 0.000755,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H21','D_ELEC', 0.000733,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H22','D_ELEC', 0.000706,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '01-18','H23','D_ELEC', 0.000673,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H00','D_ELEC', 0.023576,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H01','D_ELEC', 0.022659,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H02','D_ELEC', 0.022574,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H03','D_ELEC', 0.022302,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H04','D_ELEC', 0.022489,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H05','D_ELEC', 0.022829,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H06','D_ELEC', 0.023797,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H07','D_ELEC', 0.025700,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H08','D_ELEC', 0.026396,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H09','D_ELEC', 0.026260,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H10','D_ELEC', 0.026447,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H11','D_ELEC', 0.026005,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H12','D_ELEC', 0.025326,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H13','D_ELEC', 0.024884,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H14','D_ELEC', 0.024171,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H15','D_ELEC', 0.023950,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H16','D_ELEC', 0.023984,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H17','D_ELEC', 0.023865,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H18','D_ELEC', 0.023712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H19','D_ELEC', 0.023678,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H20','D_ELEC', 0.024018,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H21','D_ELEC', 0.024307,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H22','D_ELEC', 0.023508,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '05-11','H23','D_ELEC', 0.022523,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H00','D_ELEC', 0.016087,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H01','D_ELEC', 0.015583,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H02','D_ELEC', 0.015355,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H03','D_ELEC', 0.015408,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H04','D_ELEC', 0.015454,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H05','D_ELEC', 0.015675,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H06','D_ELEC', 0.016262,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H07','D_ELEC', 0.017658,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H08','D_ELEC', 0.018940,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H09','D_ELEC', 0.018429,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H10','D_ELEC', 0.017979,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H11','D_ELEC', 0.017483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H12','D_ELEC', 0.016804,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H13','D_ELEC', 0.016415,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H14','D_ELEC', 0.016483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H15','D_ELEC', 0.016560,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H16','D_ELEC', 0.016682,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H17','D_ELEC', 0.017323,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H18','D_ELEC', 0.017666,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H19','D_ELEC', 0.017422,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H20','D_ELEC', 0.017170,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H21','D_ELEC', 0.016941,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H22','D_ELEC', 0.016453,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2020, '12-17','H23','D_ELEC', 0.015614,'');
 
 
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H00','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H01','D_ELEC', 0.000761,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H02','D_ELEC', 0.000758,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H03','D_ELEC', 0.000762,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H04','D_ELEC', 0.000768,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H05','D_ELEC', 0.000783,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H06','D_ELEC', 0.000808,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H07','D_ELEC', 0.000870,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H08','D_ELEC', 0.000933,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H09','D_ELEC', 0.000934,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H10','D_ELEC', 0.000917,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H11','D_ELEC', 0.000894,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H12','D_ELEC', 0.000863,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H13','D_ELEC', 0.000828,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H14','D_ELEC', 0.000806,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H15','D_ELEC', 0.000771,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H16','D_ELEC', 0.000760,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H17','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H18','D_ELEC', 0.000785,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H19','D_ELEC', 0.000776,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H20','D_ELEC', 0.000755,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H21','D_ELEC', 0.000733,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H22','D_ELEC', 0.000706,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'01-18','H23','D_ELEC', 0.000673,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H00','D_ELEC', 0.023576,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H01','D_ELEC', 0.022659,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H02','D_ELEC', 0.022574,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H03','D_ELEC', 0.022302,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H04','D_ELEC', 0.022489,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H05','D_ELEC', 0.022829,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H06','D_ELEC', 0.023797,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H07','D_ELEC', 0.025700,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H08','D_ELEC', 0.026396,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H09','D_ELEC', 0.026260,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H10','D_ELEC', 0.026447,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H11','D_ELEC', 0.026005,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H12','D_ELEC', 0.025326,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H13','D_ELEC', 0.024884,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H14','D_ELEC', 0.024171,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H15','D_ELEC', 0.023950,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H16','D_ELEC', 0.023984,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H17','D_ELEC', 0.023865,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H18','D_ELEC', 0.023712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H19','D_ELEC', 0.023678,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H20','D_ELEC', 0.024018,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H21','D_ELEC', 0.024307,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H22','D_ELEC', 0.023508,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'05-11','H23','D_ELEC', 0.022523,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H00','D_ELEC', 0.016087,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H01','D_ELEC', 0.015583,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H02','D_ELEC', 0.015355,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H03','D_ELEC', 0.015408,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H04','D_ELEC', 0.015454,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H05','D_ELEC', 0.015675,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H06','D_ELEC', 0.016262,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H07','D_ELEC', 0.017658,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H08','D_ELEC', 0.018940,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H09','D_ELEC', 0.018429,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H10','D_ELEC', 0.017979,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H11','D_ELEC', 0.017483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H12','D_ELEC', 0.016804,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H13','D_ELEC', 0.016415,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H14','D_ELEC', 0.016483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H15','D_ELEC', 0.016560,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H16','D_ELEC', 0.016682,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H17','D_ELEC', 0.017323,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H18','D_ELEC', 0.017666,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H19','D_ELEC', 0.017422,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H20','D_ELEC', 0.017170,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H21','D_ELEC', 0.016941,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H22','D_ELEC', 0.016453,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2030,'12-17','H23','D_ELEC', 0.015614,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H00','D_ELEC', 0.000763,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H01','D_ELEC', 0.000754,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H02','D_ELEC', 0.000744,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H03','D_ELEC', 0.000737,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H04','D_ELEC', 0.000735,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H05','D_ELEC', 0.000717,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H06','D_ELEC', 0.000719,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H07','D_ELEC', 0.000779,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H08','D_ELEC', 0.000818,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H09','D_ELEC', 0.000818,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H10','D_ELEC', 0.000797,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H11','D_ELEC', 0.000783,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H12','D_ELEC', 0.000769,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H13','D_ELEC', 0.000765,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H14','D_ELEC', 0.000739,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H15','D_ELEC', 0.000710,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H16','D_ELEC', 0.000694,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H17','D_ELEC', 0.000701,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H18','D_ELEC', 0.000743,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H19','D_ELEC', 0.000741,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H20','D_ELEC', 0.000729,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H21','D_ELEC', 0.000718,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H22','D_ELEC', 0.000682,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'01-18','H23','D_ELEC', 0.000664,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H00','D_ELEC', 0.024767,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H01','D_ELEC', 0.023764,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H02','D_ELEC', 0.022937,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H03','D_ELEC', 0.023951,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H04','D_ELEC', 0.023721,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H05','D_ELEC', 0.023037,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H06','D_ELEC', 0.023744,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H07','D_ELEC', 0.024670,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H08','D_ELEC', 0.026498,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H09','D_ELEC', 0.026848,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H10','D_ELEC', 0.026638,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H11','D_ELEC', 0.026065,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H12','D_ELEC', 0.025157,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H13','D_ELEC', 0.024557,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H14','D_ELEC', 0.025132,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H15','D_ELEC', 0.025075,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H16','D_ELEC', 0.025702,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H17','D_ELEC', 0.027333,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H18','D_ELEC', 0.027112,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H19','D_ELEC', 0.026778,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H20','D_ELEC', 0.027259,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H21','D_ELEC', 0.027147,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H22','D_ELEC', 0.025823,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'05-11','H23','D_ELEC', 0.024354,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H00','D_ELEC', 0.015050,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H01','D_ELEC', 0.014712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H02','D_ELEC', 0.014322,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H03','D_ELEC', 0.013879,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H04','D_ELEC', 0.013779,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H05','D_ELEC', 0.013853,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H06','D_ELEC', 0.014321,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H07','D_ELEC', 0.015731,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H08','D_ELEC', 0.016873,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H09','D_ELEC', 0.017037,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H10','D_ELEC', 0.016687,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H11','D_ELEC', 0.016417,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H12','D_ELEC', 0.015932,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H13','D_ELEC', 0.015784,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H14','D_ELEC', 0.015598,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H15','D_ELEC', 0.015527,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H16','D_ELEC', 0.015811,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H17','D_ELEC', 0.016552,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H18','D_ELEC', 0.017175,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H19','D_ELEC', 0.016906,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H20','D_ELEC', 0.016517,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H21','D_ELEC', 0.016084,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H22','D_ELEC', 0.015321,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2030,'12-17','H23','D_ELEC', 0.014246,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H00','D_ELEC', 0.000629,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H01','D_ELEC', 0.000617,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H02','D_ELEC', 0.000615,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H03','D_ELEC', 0.000614,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H04','D_ELEC', 0.000623,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H05','D_ELEC', 0.000648,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H06','D_ELEC', 0.000714,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H07','D_ELEC', 0.000777,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H08','D_ELEC', 0.000788,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H09','D_ELEC', 0.000780,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H10','D_ELEC', 0.000754,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H11','D_ELEC', 0.000736,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H12','D_ELEC', 0.000709,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H13','D_ELEC', 0.000701,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H14','D_ELEC', 0.000696,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H15','D_ELEC', 0.000693,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H16','D_ELEC', 0.000712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H17','D_ELEC', 0.000751,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H18','D_ELEC', 0.000741,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H19','D_ELEC', 0.000719,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H20','D_ELEC', 0.000692,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H21','D_ELEC', 0.000657,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H22','D_ELEC', 0.000614,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'01-18','H23','D_ELEC', 0.000578,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H00','D_ELEC', 0.021649,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H01','D_ELEC', 0.020672,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H02','D_ELEC', 0.020887,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H03','D_ELEC', 0.020717,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H04','D_ELEC', 0.020805,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H05','D_ELEC', 0.021529,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H06','D_ELEC', 0.022825,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H07','D_ELEC', 0.025011,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H08','D_ELEC', 0.028410,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H09','D_ELEC', 0.029497,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H10','D_ELEC', 0.030016,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H11','D_ELEC', 0.028719,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H12','D_ELEC', 0.026392,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H13','D_ELEC', 0.027495,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H14','D_ELEC', 0.027475,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H15','D_ELEC', 0.025555,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H16','D_ELEC', 0.025714,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H17','D_ELEC', 0.026914,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H18','D_ELEC', 0.026680,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H19','D_ELEC', 0.025919,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H20','D_ELEC', 0.025943,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H21','D_ELEC', 0.026707,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H22','D_ELEC', 0.025596,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'05-11','H23','D_ELEC', 0.023979,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H00','D_ELEC', 0.014468,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H01','D_ELEC', 0.014019,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H02','D_ELEC', 0.013768,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H03','D_ELEC', 0.013723,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H04','D_ELEC', 0.013870,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H05','D_ELEC', 0.014353,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H06','D_ELEC', 0.015888,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H07','D_ELEC', 0.017685,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H08','D_ELEC', 0.017680,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H09','D_ELEC', 0.017003,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H10','D_ELEC', 0.016399,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H11','D_ELEC', 0.015874,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H12','D_ELEC', 0.015505,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H13','D_ELEC', 0.015337,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H14','D_ELEC', 0.015328,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H15','D_ELEC', 0.015966,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H16','D_ELEC', 0.016987,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H17','D_ELEC', 0.018035,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H18','D_ELEC', 0.017706,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H19','D_ELEC', 0.017241,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H20','D_ELEC', 0.016902,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H21','D_ELEC', 0.016423,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H22','D_ELEC', 0.014693,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2030,'12-17','H23','D_ELEC', 0.013485,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H00','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H01','D_ELEC', 0.000761,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H02','D_ELEC', 0.000758,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H03','D_ELEC', 0.000762,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H04','D_ELEC', 0.000768,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H05','D_ELEC', 0.000783,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H06','D_ELEC', 0.000808,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H07','D_ELEC', 0.000870,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H08','D_ELEC', 0.000933,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H09','D_ELEC', 0.000934,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H10','D_ELEC', 0.000917,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H11','D_ELEC', 0.000894,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H12','D_ELEC', 0.000863,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H13','D_ELEC', 0.000828,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H14','D_ELEC', 0.000806,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H15','D_ELEC', 0.000771,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H16','D_ELEC', 0.000760,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H17','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H18','D_ELEC', 0.000785,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H19','D_ELEC', 0.000776,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H20','D_ELEC', 0.000755,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H21','D_ELEC', 0.000733,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H22','D_ELEC', 0.000706,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'01-18','H23','D_ELEC', 0.000673,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H00','D_ELEC', 0.023576,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H01','D_ELEC', 0.022659,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H02','D_ELEC', 0.022574,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H03','D_ELEC', 0.022302,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H04','D_ELEC', 0.022489,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H05','D_ELEC', 0.022829,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H06','D_ELEC', 0.023797,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H07','D_ELEC', 0.025700,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H08','D_ELEC', 0.026396,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H09','D_ELEC', 0.026260,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H10','D_ELEC', 0.026447,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H11','D_ELEC', 0.026005,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H12','D_ELEC', 0.025326,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H13','D_ELEC', 0.024884,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H14','D_ELEC', 0.024171,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H15','D_ELEC', 0.023950,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H16','D_ELEC', 0.023984,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H17','D_ELEC', 0.023865,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H18','D_ELEC', 0.023712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H19','D_ELEC', 0.023678,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H20','D_ELEC', 0.024018,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H21','D_ELEC', 0.024307,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H22','D_ELEC', 0.023508,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'05-11','H23','D_ELEC', 0.022523,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H00','D_ELEC', 0.016087,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H01','D_ELEC', 0.015583,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H02','D_ELEC', 0.015355,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H03','D_ELEC', 0.015408,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H04','D_ELEC', 0.015454,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H05','D_ELEC', 0.015675,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H06','D_ELEC', 0.016262,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H07','D_ELEC', 0.017658,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H08','D_ELEC', 0.018940,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H09','D_ELEC', 0.018429,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H10','D_ELEC', 0.017979,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H11','D_ELEC', 0.017483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H12','D_ELEC', 0.016804,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H13','D_ELEC', 0.016415,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H14','D_ELEC', 0.016483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H15','D_ELEC', 0.016560,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H16','D_ELEC', 0.016682,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H17','D_ELEC', 0.017323,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H18','D_ELEC', 0.017666,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H19','D_ELEC', 0.017422,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H20','D_ELEC', 0.017170,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H21','D_ELEC', 0.016941,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H22','D_ELEC', 0.016453,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2030,'12-17','H23','D_ELEC', 0.015614,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H00','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H01','D_ELEC', 0.000761,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H02','D_ELEC', 0.000758,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H03','D_ELEC', 0.000762,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H04','D_ELEC', 0.000768,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H05','D_ELEC', 0.000783,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H06','D_ELEC', 0.000808,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H07','D_ELEC', 0.000870,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H08','D_ELEC', 0.000933,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H09','D_ELEC', 0.000934,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H10','D_ELEC', 0.000917,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H11','D_ELEC', 0.000894,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H12','D_ELEC', 0.000863,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H13','D_ELEC', 0.000828,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H14','D_ELEC', 0.000806,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H15','D_ELEC', 0.000771,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H16','D_ELEC', 0.000760,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H17','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H18','D_ELEC', 0.000785,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H19','D_ELEC', 0.000776,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H20','D_ELEC', 0.000755,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H21','D_ELEC', 0.000733,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H22','D_ELEC', 0.000706,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'01-18','H23','D_ELEC', 0.000673,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H00','D_ELEC', 0.023576,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H01','D_ELEC', 0.022659,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H02','D_ELEC', 0.022574,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H03','D_ELEC', 0.022302,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H04','D_ELEC', 0.022489,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H05','D_ELEC', 0.022829,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H06','D_ELEC', 0.023797,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H07','D_ELEC', 0.025700,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H08','D_ELEC', 0.026396,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H09','D_ELEC', 0.026260,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H10','D_ELEC', 0.026447,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H11','D_ELEC', 0.026005,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H12','D_ELEC', 0.025326,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H13','D_ELEC', 0.024884,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H14','D_ELEC', 0.024171,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H15','D_ELEC', 0.023950,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H16','D_ELEC', 0.023984,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H17','D_ELEC', 0.023865,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H18','D_ELEC', 0.023712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H19','D_ELEC', 0.023678,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H20','D_ELEC', 0.024018,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H21','D_ELEC', 0.024307,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H22','D_ELEC', 0.023508,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'05-11','H23','D_ELEC', 0.022523,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H00','D_ELEC', 0.016087,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H01','D_ELEC', 0.015583,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H02','D_ELEC', 0.015355,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H03','D_ELEC', 0.015408,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H04','D_ELEC', 0.015454,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H05','D_ELEC', 0.015675,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H06','D_ELEC', 0.016262,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H07','D_ELEC', 0.017658,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H08','D_ELEC', 0.018940,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H09','D_ELEC', 0.018429,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H10','D_ELEC', 0.017979,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H11','D_ELEC', 0.017483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H12','D_ELEC', 0.016804,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H13','D_ELEC', 0.016415,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H14','D_ELEC', 0.016483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H15','D_ELEC', 0.016560,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H16','D_ELEC', 0.016682,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H17','D_ELEC', 0.017323,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H18','D_ELEC', 0.017666,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H19','D_ELEC', 0.017422,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H20','D_ELEC', 0.017170,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H21','D_ELEC', 0.016941,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H22','D_ELEC', 0.016453,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2030,'12-17','H23','D_ELEC', 0.015614,'');
+
+
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H00','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H01','D_ELEC', 0.000761,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H02','D_ELEC', 0.000758,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H03','D_ELEC', 0.000762,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H04','D_ELEC', 0.000768,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H05','D_ELEC', 0.000783,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H06','D_ELEC', 0.000808,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H07','D_ELEC', 0.000870,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H08','D_ELEC', 0.000933,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H09','D_ELEC', 0.000934,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H10','D_ELEC', 0.000917,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H11','D_ELEC', 0.000894,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H12','D_ELEC', 0.000863,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H13','D_ELEC', 0.000828,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H14','D_ELEC', 0.000806,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H15','D_ELEC', 0.000771,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H16','D_ELEC', 0.000760,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H17','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H18','D_ELEC', 0.000785,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H19','D_ELEC', 0.000776,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H20','D_ELEC', 0.000755,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H21','D_ELEC', 0.000733,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H22','D_ELEC', 0.000706,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'01-18','H23','D_ELEC', 0.000673,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H00','D_ELEC', 0.023576,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H01','D_ELEC', 0.022659,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H02','D_ELEC', 0.022574,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H03','D_ELEC', 0.022302,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H04','D_ELEC', 0.022489,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H05','D_ELEC', 0.022829,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H06','D_ELEC', 0.023797,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H07','D_ELEC', 0.025700,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H08','D_ELEC', 0.026396,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H09','D_ELEC', 0.026260,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H10','D_ELEC', 0.026447,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H11','D_ELEC', 0.026005,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H12','D_ELEC', 0.025326,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H13','D_ELEC', 0.024884,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H14','D_ELEC', 0.024171,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H15','D_ELEC', 0.023950,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H16','D_ELEC', 0.023984,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H17','D_ELEC', 0.023865,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H18','D_ELEC', 0.023712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H19','D_ELEC', 0.023678,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H20','D_ELEC', 0.024018,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H21','D_ELEC', 0.024307,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H22','D_ELEC', 0.023508,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'05-11','H23','D_ELEC', 0.022523,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H00','D_ELEC', 0.016087,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H01','D_ELEC', 0.015583,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H02','D_ELEC', 0.015355,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H03','D_ELEC', 0.015408,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H04','D_ELEC', 0.015454,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H05','D_ELEC', 0.015675,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H06','D_ELEC', 0.016262,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H07','D_ELEC', 0.017658,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H08','D_ELEC', 0.018940,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H09','D_ELEC', 0.018429,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H10','D_ELEC', 0.017979,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H11','D_ELEC', 0.017483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H12','D_ELEC', 0.016804,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H13','D_ELEC', 0.016415,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H14','D_ELEC', 0.016483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H15','D_ELEC', 0.016560,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H16','D_ELEC', 0.016682,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H17','D_ELEC', 0.017323,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H18','D_ELEC', 0.017666,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H19','D_ELEC', 0.017422,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H20','D_ELEC', 0.017170,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H21','D_ELEC', 0.016941,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H22','D_ELEC', 0.016453,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2040,'12-17','H23','D_ELEC', 0.015614,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H00','D_ELEC', 0.000763,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H01','D_ELEC', 0.000754,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H02','D_ELEC', 0.000744,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H03','D_ELEC', 0.000737,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H04','D_ELEC', 0.000735,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H05','D_ELEC', 0.000717,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H06','D_ELEC', 0.000719,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H07','D_ELEC', 0.000779,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H08','D_ELEC', 0.000818,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H09','D_ELEC', 0.000818,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H10','D_ELEC', 0.000797,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H11','D_ELEC', 0.000783,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H12','D_ELEC', 0.000769,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H13','D_ELEC', 0.000765,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H14','D_ELEC', 0.000739,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H15','D_ELEC', 0.000710,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H16','D_ELEC', 0.000694,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H17','D_ELEC', 0.000701,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H18','D_ELEC', 0.000743,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H19','D_ELEC', 0.000741,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H20','D_ELEC', 0.000729,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H21','D_ELEC', 0.000718,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H22','D_ELEC', 0.000682,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'01-18','H23','D_ELEC', 0.000664,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H00','D_ELEC', 0.024767,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H01','D_ELEC', 0.023764,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H02','D_ELEC', 0.022937,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H03','D_ELEC', 0.023951,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H04','D_ELEC', 0.023721,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H05','D_ELEC', 0.023037,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H06','D_ELEC', 0.023744,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H07','D_ELEC', 0.024670,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H08','D_ELEC', 0.026498,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H09','D_ELEC', 0.026848,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H10','D_ELEC', 0.026638,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H11','D_ELEC', 0.026065,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H12','D_ELEC', 0.025157,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H13','D_ELEC', 0.024557,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H14','D_ELEC', 0.025132,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H15','D_ELEC', 0.025075,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H16','D_ELEC', 0.025702,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H17','D_ELEC', 0.027333,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H18','D_ELEC', 0.027112,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H19','D_ELEC', 0.026778,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H20','D_ELEC', 0.027259,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H21','D_ELEC', 0.027147,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H22','D_ELEC', 0.025823,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'05-11','H23','D_ELEC', 0.024354,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H00','D_ELEC', 0.015050,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H01','D_ELEC', 0.014712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H02','D_ELEC', 0.014322,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H03','D_ELEC', 0.013879,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H04','D_ELEC', 0.013779,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H05','D_ELEC', 0.013853,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H06','D_ELEC', 0.014321,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H07','D_ELEC', 0.015731,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H08','D_ELEC', 0.016873,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H09','D_ELEC', 0.017037,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H10','D_ELEC', 0.016687,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H11','D_ELEC', 0.016417,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H12','D_ELEC', 0.015932,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H13','D_ELEC', 0.015784,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H14','D_ELEC', 0.015598,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H15','D_ELEC', 0.015527,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H16','D_ELEC', 0.015811,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H17','D_ELEC', 0.016552,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H18','D_ELEC', 0.017175,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H19','D_ELEC', 0.016906,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H20','D_ELEC', 0.016517,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H21','D_ELEC', 0.016084,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H22','D_ELEC', 0.015321,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2040,'12-17','H23','D_ELEC', 0.014246,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H00','D_ELEC', 0.000629,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H01','D_ELEC', 0.000617,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H02','D_ELEC', 0.000615,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H03','D_ELEC', 0.000614,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H04','D_ELEC', 0.000623,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H05','D_ELEC', 0.000648,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H06','D_ELEC', 0.000714,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H07','D_ELEC', 0.000777,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H08','D_ELEC', 0.000788,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H09','D_ELEC', 0.000780,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H10','D_ELEC', 0.000754,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H11','D_ELEC', 0.000736,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H12','D_ELEC', 0.000709,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H13','D_ELEC', 0.000701,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H14','D_ELEC', 0.000696,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H15','D_ELEC', 0.000693,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H16','D_ELEC', 0.000712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H17','D_ELEC', 0.000751,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H18','D_ELEC', 0.000741,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H19','D_ELEC', 0.000719,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H20','D_ELEC', 0.000692,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H21','D_ELEC', 0.000657,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H22','D_ELEC', 0.000614,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'01-18','H23','D_ELEC', 0.000578,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H00','D_ELEC', 0.021649,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H01','D_ELEC', 0.020672,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H02','D_ELEC', 0.020887,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H03','D_ELEC', 0.020717,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H04','D_ELEC', 0.020805,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H05','D_ELEC', 0.021529,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H06','D_ELEC', 0.022825,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H07','D_ELEC', 0.025011,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H08','D_ELEC', 0.028410,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H09','D_ELEC', 0.029497,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H10','D_ELEC', 0.030016,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H11','D_ELEC', 0.028719,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H12','D_ELEC', 0.026392,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H13','D_ELEC', 0.027495,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H14','D_ELEC', 0.027475,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H15','D_ELEC', 0.025555,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H16','D_ELEC', 0.025714,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H17','D_ELEC', 0.026914,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H18','D_ELEC', 0.026680,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H19','D_ELEC', 0.025919,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H20','D_ELEC', 0.025943,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H21','D_ELEC', 0.026707,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H22','D_ELEC', 0.025596,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'05-11','H23','D_ELEC', 0.023979,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H00','D_ELEC', 0.014468,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H01','D_ELEC', 0.014019,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H02','D_ELEC', 0.013768,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H03','D_ELEC', 0.013723,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H04','D_ELEC', 0.013870,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H05','D_ELEC', 0.014353,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H06','D_ELEC', 0.015888,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H07','D_ELEC', 0.017685,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H08','D_ELEC', 0.017680,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H09','D_ELEC', 0.017003,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H10','D_ELEC', 0.016399,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H11','D_ELEC', 0.015874,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H12','D_ELEC', 0.015505,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H13','D_ELEC', 0.015337,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H14','D_ELEC', 0.015328,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H15','D_ELEC', 0.015966,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H16','D_ELEC', 0.016987,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H17','D_ELEC', 0.018035,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H18','D_ELEC', 0.017706,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H19','D_ELEC', 0.017241,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H20','D_ELEC', 0.016902,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H21','D_ELEC', 0.016423,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H22','D_ELEC', 0.014693,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2040,'12-17','H23','D_ELEC', 0.013485,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H00','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H01','D_ELEC', 0.000761,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H02','D_ELEC', 0.000758,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H03','D_ELEC', 0.000762,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H04','D_ELEC', 0.000768,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H05','D_ELEC', 0.000783,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H06','D_ELEC', 0.000808,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H07','D_ELEC', 0.000870,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H08','D_ELEC', 0.000933,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H09','D_ELEC', 0.000934,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H10','D_ELEC', 0.000917,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H11','D_ELEC', 0.000894,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H12','D_ELEC', 0.000863,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H13','D_ELEC', 0.000828,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H14','D_ELEC', 0.000806,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H15','D_ELEC', 0.000771,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H16','D_ELEC', 0.000760,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H17','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H18','D_ELEC', 0.000785,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H19','D_ELEC', 0.000776,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H20','D_ELEC', 0.000755,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H21','D_ELEC', 0.000733,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H22','D_ELEC', 0.000706,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'01-18','H23','D_ELEC', 0.000673,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H00','D_ELEC', 0.023576,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H01','D_ELEC', 0.022659,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H02','D_ELEC', 0.022574,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H03','D_ELEC', 0.022302,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H04','D_ELEC', 0.022489,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H05','D_ELEC', 0.022829,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H06','D_ELEC', 0.023797,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H07','D_ELEC', 0.025700,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H08','D_ELEC', 0.026396,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H09','D_ELEC', 0.026260,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H10','D_ELEC', 0.026447,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H11','D_ELEC', 0.026005,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H12','D_ELEC', 0.025326,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H13','D_ELEC', 0.024884,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H14','D_ELEC', 0.024171,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H15','D_ELEC', 0.023950,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H16','D_ELEC', 0.023984,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H17','D_ELEC', 0.023865,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H18','D_ELEC', 0.023712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H19','D_ELEC', 0.023678,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H20','D_ELEC', 0.024018,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H21','D_ELEC', 0.024307,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H22','D_ELEC', 0.023508,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'05-11','H23','D_ELEC', 0.022523,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H00','D_ELEC', 0.016087,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H01','D_ELEC', 0.015583,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H02','D_ELEC', 0.015355,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H03','D_ELEC', 0.015408,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H04','D_ELEC', 0.015454,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H05','D_ELEC', 0.015675,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H06','D_ELEC', 0.016262,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H07','D_ELEC', 0.017658,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H08','D_ELEC', 0.018940,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H09','D_ELEC', 0.018429,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H10','D_ELEC', 0.017979,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H11','D_ELEC', 0.017483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H12','D_ELEC', 0.016804,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H13','D_ELEC', 0.016415,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H14','D_ELEC', 0.016483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H15','D_ELEC', 0.016560,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H16','D_ELEC', 0.016682,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H17','D_ELEC', 0.017323,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H18','D_ELEC', 0.017666,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H19','D_ELEC', 0.017422,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H20','D_ELEC', 0.017170,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H21','D_ELEC', 0.016941,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H22','D_ELEC', 0.016453,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2040,'12-17','H23','D_ELEC', 0.015614,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H00','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H01','D_ELEC', 0.000761,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H02','D_ELEC', 0.000758,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H03','D_ELEC', 0.000762,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H04','D_ELEC', 0.000768,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H05','D_ELEC', 0.000783,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H06','D_ELEC', 0.000808,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H07','D_ELEC', 0.000870,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H08','D_ELEC', 0.000933,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H09','D_ELEC', 0.000934,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H10','D_ELEC', 0.000917,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H11','D_ELEC', 0.000894,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H12','D_ELEC', 0.000863,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H13','D_ELEC', 0.000828,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H14','D_ELEC', 0.000806,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H15','D_ELEC', 0.000771,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H16','D_ELEC', 0.000760,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H17','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H18','D_ELEC', 0.000785,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H19','D_ELEC', 0.000776,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H20','D_ELEC', 0.000755,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H21','D_ELEC', 0.000733,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H22','D_ELEC', 0.000706,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'01-18','H23','D_ELEC', 0.000673,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H00','D_ELEC', 0.023576,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H01','D_ELEC', 0.022659,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H02','D_ELEC', 0.022574,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H03','D_ELEC', 0.022302,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H04','D_ELEC', 0.022489,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H05','D_ELEC', 0.022829,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H06','D_ELEC', 0.023797,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H07','D_ELEC', 0.025700,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H08','D_ELEC', 0.026396,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H09','D_ELEC', 0.026260,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H10','D_ELEC', 0.026447,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H11','D_ELEC', 0.026005,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H12','D_ELEC', 0.025326,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H13','D_ELEC', 0.024884,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H14','D_ELEC', 0.024171,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H15','D_ELEC', 0.023950,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H16','D_ELEC', 0.023984,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H17','D_ELEC', 0.023865,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H18','D_ELEC', 0.023712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H19','D_ELEC', 0.023678,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H20','D_ELEC', 0.024018,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H21','D_ELEC', 0.024307,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H22','D_ELEC', 0.023508,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'05-11','H23','D_ELEC', 0.022523,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H00','D_ELEC', 0.016087,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H01','D_ELEC', 0.015583,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H02','D_ELEC', 0.015355,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H03','D_ELEC', 0.015408,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H04','D_ELEC', 0.015454,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H05','D_ELEC', 0.015675,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H06','D_ELEC', 0.016262,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H07','D_ELEC', 0.017658,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H08','D_ELEC', 0.018940,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H09','D_ELEC', 0.018429,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H10','D_ELEC', 0.017979,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H11','D_ELEC', 0.017483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H12','D_ELEC', 0.016804,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H13','D_ELEC', 0.016415,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H14','D_ELEC', 0.016483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H15','D_ELEC', 0.016560,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H16','D_ELEC', 0.016682,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H17','D_ELEC', 0.017323,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H18','D_ELEC', 0.017666,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H19','D_ELEC', 0.017422,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H20','D_ELEC', 0.017170,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H21','D_ELEC', 0.016941,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H22','D_ELEC', 0.016453,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2040,'12-17','H23','D_ELEC', 0.015614,'');
+
+
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H00','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H01','D_ELEC', 0.000761,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H02','D_ELEC', 0.000758,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H03','D_ELEC', 0.000762,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H04','D_ELEC', 0.000768,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H05','D_ELEC', 0.000783,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H06','D_ELEC', 0.000808,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H07','D_ELEC', 0.000870,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H08','D_ELEC', 0.000933,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H09','D_ELEC', 0.000934,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H10','D_ELEC', 0.000917,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H11','D_ELEC', 0.000894,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H12','D_ELEC', 0.000863,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H13','D_ELEC', 0.000828,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H14','D_ELEC', 0.000806,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H15','D_ELEC', 0.000771,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H16','D_ELEC', 0.000760,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H17','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H18','D_ELEC', 0.000785,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H19','D_ELEC', 0.000776,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H20','D_ELEC', 0.000755,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H21','D_ELEC', 0.000733,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H22','D_ELEC', 0.000706,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'01-18','H23','D_ELEC', 0.000673,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H00','D_ELEC', 0.023576,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H01','D_ELEC', 0.022659,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H02','D_ELEC', 0.022574,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H03','D_ELEC', 0.022302,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H04','D_ELEC', 0.022489,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H05','D_ELEC', 0.022829,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H06','D_ELEC', 0.023797,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H07','D_ELEC', 0.025700,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H08','D_ELEC', 0.026396,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H09','D_ELEC', 0.026260,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H10','D_ELEC', 0.026447,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H11','D_ELEC', 0.026005,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H12','D_ELEC', 0.025326,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H13','D_ELEC', 0.024884,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H14','D_ELEC', 0.024171,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H15','D_ELEC', 0.023950,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H16','D_ELEC', 0.023984,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H17','D_ELEC', 0.023865,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H18','D_ELEC', 0.023712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H19','D_ELEC', 0.023678,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H20','D_ELEC', 0.024018,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H21','D_ELEC', 0.024307,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H22','D_ELEC', 0.023508,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'05-11','H23','D_ELEC', 0.022523,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H00','D_ELEC', 0.016087,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H01','D_ELEC', 0.015583,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H02','D_ELEC', 0.015355,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H03','D_ELEC', 0.015408,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H04','D_ELEC', 0.015454,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H05','D_ELEC', 0.015675,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H06','D_ELEC', 0.016262,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H07','D_ELEC', 0.017658,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H08','D_ELEC', 0.018940,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H09','D_ELEC', 0.018429,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H10','D_ELEC', 0.017979,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H11','D_ELEC', 0.017483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H12','D_ELEC', 0.016804,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H13','D_ELEC', 0.016415,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H14','D_ELEC', 0.016483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H15','D_ELEC', 0.016560,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H16','D_ELEC', 0.016682,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H17','D_ELEC', 0.017323,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H18','D_ELEC', 0.017666,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H19','D_ELEC', 0.017422,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H20','D_ELEC', 0.017170,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H21','D_ELEC', 0.016941,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H22','D_ELEC', 0.016453,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NB', 2050,'12-17','H23','D_ELEC', 0.015614,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H00','D_ELEC', 0.000763,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H01','D_ELEC', 0.000754,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H02','D_ELEC', 0.000744,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H03','D_ELEC', 0.000737,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H04','D_ELEC', 0.000735,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H05','D_ELEC', 0.000717,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H06','D_ELEC', 0.000719,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H07','D_ELEC', 0.000779,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H08','D_ELEC', 0.000818,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H09','D_ELEC', 0.000818,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H10','D_ELEC', 0.000797,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H11','D_ELEC', 0.000783,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H12','D_ELEC', 0.000769,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H13','D_ELEC', 0.000765,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H14','D_ELEC', 0.000739,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H15','D_ELEC', 0.000710,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H16','D_ELEC', 0.000694,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H17','D_ELEC', 0.000701,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H18','D_ELEC', 0.000743,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H19','D_ELEC', 0.000741,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H20','D_ELEC', 0.000729,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H21','D_ELEC', 0.000718,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H22','D_ELEC', 0.000682,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'01-18','H23','D_ELEC', 0.000664,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H00','D_ELEC', 0.024767,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H01','D_ELEC', 0.023764,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H02','D_ELEC', 0.022937,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H03','D_ELEC', 0.023951,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H04','D_ELEC', 0.023721,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H05','D_ELEC', 0.023037,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H06','D_ELEC', 0.023744,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H07','D_ELEC', 0.024670,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H08','D_ELEC', 0.026498,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H09','D_ELEC', 0.026848,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H10','D_ELEC', 0.026638,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H11','D_ELEC', 0.026065,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H12','D_ELEC', 0.025157,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H13','D_ELEC', 0.024557,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H14','D_ELEC', 0.025132,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H15','D_ELEC', 0.025075,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H16','D_ELEC', 0.025702,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H17','D_ELEC', 0.027333,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H18','D_ELEC', 0.027112,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H19','D_ELEC', 0.026778,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H20','D_ELEC', 0.027259,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H21','D_ELEC', 0.027147,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H22','D_ELEC', 0.025823,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'05-11','H23','D_ELEC', 0.024354,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H00','D_ELEC', 0.015050,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H01','D_ELEC', 0.014712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H02','D_ELEC', 0.014322,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H03','D_ELEC', 0.013879,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H04','D_ELEC', 0.013779,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H05','D_ELEC', 0.013853,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H06','D_ELEC', 0.014321,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H07','D_ELEC', 0.015731,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H08','D_ELEC', 0.016873,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H09','D_ELEC', 0.017037,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H10','D_ELEC', 0.016687,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H11','D_ELEC', 0.016417,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H12','D_ELEC', 0.015932,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H13','D_ELEC', 0.015784,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H14','D_ELEC', 0.015598,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H15','D_ELEC', 0.015527,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H16','D_ELEC', 0.015811,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H17','D_ELEC', 0.016552,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H18','D_ELEC', 0.017175,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H19','D_ELEC', 0.016906,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H20','D_ELEC', 0.016517,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H21','D_ELEC', 0.016084,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H22','D_ELEC', 0.015321,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NS', 2050,'12-17','H23','D_ELEC', 0.014246,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H00','D_ELEC', 0.000629,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H01','D_ELEC', 0.000617,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H02','D_ELEC', 0.000615,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H03','D_ELEC', 0.000614,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H04','D_ELEC', 0.000623,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H05','D_ELEC', 0.000648,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H06','D_ELEC', 0.000714,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H07','D_ELEC', 0.000777,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H08','D_ELEC', 0.000788,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H09','D_ELEC', 0.000780,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H10','D_ELEC', 0.000754,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H11','D_ELEC', 0.000736,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H12','D_ELEC', 0.000709,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H13','D_ELEC', 0.000701,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H14','D_ELEC', 0.000696,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H15','D_ELEC', 0.000693,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H16','D_ELEC', 0.000712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H17','D_ELEC', 0.000751,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H18','D_ELEC', 0.000741,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H19','D_ELEC', 0.000719,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H20','D_ELEC', 0.000692,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H21','D_ELEC', 0.000657,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H22','D_ELEC', 0.000614,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'01-18','H23','D_ELEC', 0.000578,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H00','D_ELEC', 0.021649,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H01','D_ELEC', 0.020672,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H02','D_ELEC', 0.020887,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H03','D_ELEC', 0.020717,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H04','D_ELEC', 0.020805,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H05','D_ELEC', 0.021529,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H06','D_ELEC', 0.022825,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H07','D_ELEC', 0.025011,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H08','D_ELEC', 0.028410,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H09','D_ELEC', 0.029497,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H10','D_ELEC', 0.030016,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H11','D_ELEC', 0.028719,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H12','D_ELEC', 0.026392,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H13','D_ELEC', 0.027495,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H14','D_ELEC', 0.027475,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H15','D_ELEC', 0.025555,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H16','D_ELEC', 0.025714,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H17','D_ELEC', 0.026914,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H18','D_ELEC', 0.026680,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H19','D_ELEC', 0.025919,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H20','D_ELEC', 0.025943,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H21','D_ELEC', 0.026707,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H22','D_ELEC', 0.025596,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'05-11','H23','D_ELEC', 0.023979,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H00','D_ELEC', 0.014468,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H01','D_ELEC', 0.014019,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H02','D_ELEC', 0.013768,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H03','D_ELEC', 0.013723,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H04','D_ELEC', 0.013870,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H05','D_ELEC', 0.014353,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H06','D_ELEC', 0.015888,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H07','D_ELEC', 0.017685,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H08','D_ELEC', 0.017680,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H09','D_ELEC', 0.017003,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H10','D_ELEC', 0.016399,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H11','D_ELEC', 0.015874,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H12','D_ELEC', 0.015505,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H13','D_ELEC', 0.015337,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H14','D_ELEC', 0.015328,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H15','D_ELEC', 0.015966,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H16','D_ELEC', 0.016987,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H17','D_ELEC', 0.018035,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H18','D_ELEC', 0.017706,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H19','D_ELEC', 0.017241,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H20','D_ELEC', 0.016902,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H21','D_ELEC', 0.016423,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H22','D_ELEC', 0.014693,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('PEI', 2050,'12-17','H23','D_ELEC', 0.013485,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H00','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H01','D_ELEC', 0.000761,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H02','D_ELEC', 0.000758,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H03','D_ELEC', 0.000762,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H04','D_ELEC', 0.000768,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H05','D_ELEC', 0.000783,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H06','D_ELEC', 0.000808,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H07','D_ELEC', 0.000870,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H08','D_ELEC', 0.000933,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H09','D_ELEC', 0.000934,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H10','D_ELEC', 0.000917,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H11','D_ELEC', 0.000894,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H12','D_ELEC', 0.000863,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H13','D_ELEC', 0.000828,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H14','D_ELEC', 0.000806,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H15','D_ELEC', 0.000771,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H16','D_ELEC', 0.000760,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H17','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H18','D_ELEC', 0.000785,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H19','D_ELEC', 0.000776,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H20','D_ELEC', 0.000755,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H21','D_ELEC', 0.000733,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H22','D_ELEC', 0.000706,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'01-18','H23','D_ELEC', 0.000673,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H00','D_ELEC', 0.023576,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H01','D_ELEC', 0.022659,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H02','D_ELEC', 0.022574,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H03','D_ELEC', 0.022302,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H04','D_ELEC', 0.022489,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H05','D_ELEC', 0.022829,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H06','D_ELEC', 0.023797,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H07','D_ELEC', 0.025700,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H08','D_ELEC', 0.026396,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H09','D_ELEC', 0.026260,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H10','D_ELEC', 0.026447,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H11','D_ELEC', 0.026005,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H12','D_ELEC', 0.025326,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H13','D_ELEC', 0.024884,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H14','D_ELEC', 0.024171,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H15','D_ELEC', 0.023950,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H16','D_ELEC', 0.023984,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H17','D_ELEC', 0.023865,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H18','D_ELEC', 0.023712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H19','D_ELEC', 0.023678,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H20','D_ELEC', 0.024018,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H21','D_ELEC', 0.024307,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H22','D_ELEC', 0.023508,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'05-11','H23','D_ELEC', 0.022523,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H00','D_ELEC', 0.016087,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H01','D_ELEC', 0.015583,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H02','D_ELEC', 0.015355,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H03','D_ELEC', 0.015408,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H04','D_ELEC', 0.015454,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H05','D_ELEC', 0.015675,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H06','D_ELEC', 0.016262,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H07','D_ELEC', 0.017658,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H08','D_ELEC', 0.018940,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H09','D_ELEC', 0.018429,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H10','D_ELEC', 0.017979,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H11','D_ELEC', 0.017483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H12','D_ELEC', 0.016804,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H13','D_ELEC', 0.016415,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H14','D_ELEC', 0.016483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H15','D_ELEC', 0.016560,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H16','D_ELEC', 0.016682,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H17','D_ELEC', 0.017323,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H18','D_ELEC', 0.017666,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H19','D_ELEC', 0.017422,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H20','D_ELEC', 0.017170,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H21','D_ELEC', 0.016941,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H22','D_ELEC', 0.016453,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('NL', 2050,'12-17','H23','D_ELEC', 0.015614,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H00','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H01','D_ELEC', 0.000761,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H02','D_ELEC', 0.000758,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H03','D_ELEC', 0.000762,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H04','D_ELEC', 0.000768,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H05','D_ELEC', 0.000783,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H06','D_ELEC', 0.000808,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H07','D_ELEC', 0.000870,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H08','D_ELEC', 0.000933,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H09','D_ELEC', 0.000934,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H10','D_ELEC', 0.000917,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H11','D_ELEC', 0.000894,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H12','D_ELEC', 0.000863,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H13','D_ELEC', 0.000828,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H14','D_ELEC', 0.000806,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H15','D_ELEC', 0.000771,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H16','D_ELEC', 0.000760,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H17','D_ELEC', 0.000775,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H18','D_ELEC', 0.000785,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H19','D_ELEC', 0.000776,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H20','D_ELEC', 0.000755,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H21','D_ELEC', 0.000733,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H22','D_ELEC', 0.000706,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'01-18','H23','D_ELEC', 0.000673,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H00','D_ELEC', 0.023576,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H01','D_ELEC', 0.022659,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H02','D_ELEC', 0.022574,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H03','D_ELEC', 0.022302,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H04','D_ELEC', 0.022489,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H05','D_ELEC', 0.022829,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H06','D_ELEC', 0.023797,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H07','D_ELEC', 0.025700,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H08','D_ELEC', 0.026396,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H09','D_ELEC', 0.026260,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H10','D_ELEC', 0.026447,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H11','D_ELEC', 0.026005,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H12','D_ELEC', 0.025326,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H13','D_ELEC', 0.024884,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H14','D_ELEC', 0.024171,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H15','D_ELEC', 0.023950,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H16','D_ELEC', 0.023984,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H17','D_ELEC', 0.023865,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H18','D_ELEC', 0.023712,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H19','D_ELEC', 0.023678,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H20','D_ELEC', 0.024018,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H21','D_ELEC', 0.024307,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H22','D_ELEC', 0.023508,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'05-11','H23','D_ELEC', 0.022523,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H00','D_ELEC', 0.016087,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H01','D_ELEC', 0.015583,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H02','D_ELEC', 0.015355,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H03','D_ELEC', 0.015408,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H04','D_ELEC', 0.015454,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H05','D_ELEC', 0.015675,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H06','D_ELEC', 0.016262,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H07','D_ELEC', 0.017658,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H08','D_ELEC', 0.018940,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H09','D_ELEC', 0.018429,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H10','D_ELEC', 0.017979,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H11','D_ELEC', 0.017483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H12','D_ELEC', 0.016804,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H13','D_ELEC', 0.016415,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H14','D_ELEC', 0.016483,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H15','D_ELEC', 0.016560,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H16','D_ELEC', 0.016682,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H17','D_ELEC', 0.017323,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H18','D_ELEC', 0.017666,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H19','D_ELEC', 0.017422,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H20','D_ELEC', 0.017170,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H21','D_ELEC', 0.016941,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H22','D_ELEC', 0.016453,'');
+INSERT INTO `DemandSpecificDistribution` VALUES ('LAB', 2050,'12-17','H23','D_ELEC', 0.015614,'');
 
 
 
