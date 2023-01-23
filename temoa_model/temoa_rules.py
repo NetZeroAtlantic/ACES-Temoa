@@ -1691,6 +1691,17 @@ we write this equation for all the time-slices defined in the database in each r
         for S_o in M.ProcessOutputsByInput[r, p, t, S_v, S_i]
     )
 
+    # We must take into account flows into storage technologies.
+    # Flows into storage technologies need to be subtracted from the
+    # load calculation.
+    total_generation -= sum(
+        M.V_FlowIn[r, p, s, d, S_i, t, S_v, S_o]
+        for (t, S_v) in M.processReservePeriods[r, p]
+        if t in M.tech_storage
+        for S_i in M.processInputs[r, p, t, S_v]
+        for S_o in M.ProcessOutputsByInput[r, p, t, S_v, S_i]
+    )
+
     # Electricity imports and exports via exchange techs are accounted
     # for below:
     for r1r2 in M.RegionalIndices:  # ensure the region is of the form r1-r2
@@ -1703,7 +1714,7 @@ we write this equation for all the time-slices defined in the database in each r
         # total generation.
         if r1 == r:
             total_generation -= sum(
-                M.V_FlowIn[r1r2, p, s, d, S_i, t, S_v, S_o]
+                M.V_FlowOut[r1r2, p, s, d, S_i, t, S_v, S_o] / ( value(M.Efficiency[r1r2, S_i, t, S_v, S_o]) * value(M.EfficiencyVariable[r1r2, S_i, t, s, d, S_o]) )
                 for (t, S_v) in M.processReservePeriods[r1r2, p]
                 for S_i in M.processInputs[r1r2, p, t, S_v]
                 for S_o in M.ProcessOutputsByInput[r1r2, p, t, S_v, S_i]
