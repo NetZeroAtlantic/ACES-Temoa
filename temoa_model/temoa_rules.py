@@ -1703,7 +1703,7 @@ we write this equation for all the time-slices defined in the database in each r
         # total generation.
         if r1 == r:
             total_generation -= sum(
-                M.V_FlowOut[r1r2, p, s, d, S_i, t, S_v, S_o]
+                M.V_FlowIn[r1r2, p, s, d, S_i, t, S_v, S_o]
                 for (t, S_v) in M.processReservePeriods[r1r2, p]
                 for S_i in M.processInputs[r1r2, p, t, S_v]
                 for S_o in M.ProcessOutputsByInput[r1r2, p, t, S_v, S_i]
