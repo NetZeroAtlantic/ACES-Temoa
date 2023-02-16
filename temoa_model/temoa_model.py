@@ -272,6 +272,8 @@ def temoa_create_model(name="Temoa"):
     M.MaxActivityGroup = Param(M.RegionalIndices, M.time_optimize, M.groups)
     M.MinCapacityGroup = Param(M.RegionalIndices, M.time_optimize, M.groups)
     M.MaxCapacityGroup = Param(M.RegionalIndices, M.time_optimize, M.groups)
+    M.MinNewCapacityGroup = Param(M.RegionalIndices, M.time_optimize, M.groups)
+    M.MaxNewCapacityGroup = Param(M.RegionalIndices, M.time_optimize, M.groups)
     M.MinCapShare_rptg = Set(dimen=4, initialize=MinCapShareIndices)
     M.MinCapacityShare = Param(M.MinCapShare_rptg)
     M.MaxCapacityShare = Param(M.MinCapShare_rptg)
@@ -620,6 +622,20 @@ def temoa_create_model(name="Temoa"):
     )
     M.MinCapacityGroupConstraint = Constraint(
         M.MinCapacityGroupConstraint_rpg, rule=MinCapacityGroup_Constraint
+    )
+
+    M.MinNewCapacityGroupConstraint_rpg = Set(
+        dimen=3, initialize=lambda M: M.MinNewCapacityGroup.sparse_iterkeys()
+    )
+    M.MinNewCapacityGroupConstraint = Constraint(
+        M.MinNewCapacityGroupConstraint_rpg, rule=MinNewCapacityGroup_Constraint
+    )
+
+    M.MaxNewCapacityGroupConstraint_rpg = Set(
+        dimen=3, initialize=lambda M: M.MaxNewCapacityGroup.sparse_iterkeys()
+    )
+    M.MaxNewCapacityGroupConstraint = Constraint(
+        M.MinNewCapacityGroupConstraint_rpg, rule=MaxNewCapacityGroup_Constraint
     )
 
     M.MinAnnualCapacityFactorConstraint_rpt = Set(

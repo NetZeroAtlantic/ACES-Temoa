@@ -2426,9 +2426,32 @@ Similar to the :code:`MinCapacity` constraint, but works on a group of technolog
     expr = aggcap >= min_cap
     return expr
 
+def MinNewCapacityGroup_Constraint(M, r, p, g):
+    r"""
+Similar to the :code:`MinNewCapacity` constraint, but works on a group of technologies.
+
+"""
+    min_new_cap = value(M.MinNewCapacityGroup[r, p, g])
+    agg_new_cap = sum(
+        M.V_Capacity[r, t, p]
+        for _r, _g, t in M.tech_groups if _r == r and _g == g and (r, p, t) in M.V_CapacityAvailableByPeriodAndTech.keys()
+    )
+    expr = agg_new_cap >= min_new_cap
+    return expr
 
 
+def MaxNewCapacityGroup_Constraint(M, r, p, g):
+    r"""
+Similar to the :code:`MinNewCapacity` constraint, but works on a group of technologies.
 
+"""
+    max_new_cap = value(M.MaxNewCapacityGroup[r, p, g])
+    agg_new_cap = sum(
+        M.V_Capacity[r, t, p]
+        for _r, _g, t in M.tech_groups if _r == r and _g == g and (r, p, t) in M.V_CapacityAvailableByPeriodAndTech.keys()
+    )
+    expr = max_new_cap >= agg_new_cap
+    return expr
 
 
 

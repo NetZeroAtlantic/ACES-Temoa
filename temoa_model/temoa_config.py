@@ -169,6 +169,8 @@ def db_2_dat(ifile, ofile, options):
         ['param', 'MaxCapacityGroup',          '',                    '',             3],
         ['param', 'MinCapacityShare',          '',                    '',             4],
         ['param', 'MaxCapacityShare',          '',                    '',             4],
+        ['param', 'MinNewCapacityGroup',       '',                    '',             4],
+        ['param', 'MaxNewCapacityGroup',       '',                    '',             4],
         ['param', 'MinNewCapacityShare',       '',                    '',             4],
         ['param', 'MaxNewCapacityShare',       '',                    '',             4],
         ['param', 'MaxAsynchronousShare',      '',                    '',             2],
