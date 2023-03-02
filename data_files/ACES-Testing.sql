@@ -894,25 +894,6 @@ INSERT INTO `LinkedTechs` VALUES ('PEI','E_BECCS','CO2','E_BECCS-emissions',NULL
 INSERT INTO `LinkedTechs` VALUES ('NL','E_BECCS','CO2','E_BECCS-emissions',NULL);
 
 
-CREATE TABLE IF NOT EXISTS "MinGenGroupWeight" (
-	"regions"	text,
-	"tech"	text,
-	"group_name"	text,
-	"act_fraction"	REAL,
-	"tech_desc"	text,
-	PRIMARY KEY("tech","group_name","regions")
-);
-
-
-
-CREATE TABLE IF NOT EXISTS "MinGenGroupTarget" (
-	"periods"	integer,
-	"group_name"	text,
-	"min_act_g"	real,
-	"notes"	text,
-	PRIMARY KEY("periods","group_name")
-);
-
 
 
 CREATE TABLE IF NOT EXISTS "MinCapacity" (

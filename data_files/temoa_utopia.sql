@@ -405,22 +405,6 @@ CREATE TABLE "MyopicBaseyear" (
 	"year"	real
 	"notes"	text
 );
-CREATE TABLE "MinGenGroupWeight" (
-	"regions"	text,
-	"tech"	text,
-	"group_name"	text,
-	"act_fraction"	REAL,
-	"tech_desc"	text,
-	PRIMARY KEY("tech","group_name","regions")
-);
-CREATE TABLE "MinGenGroupTarget" (
-	"regions"	text,
-	"periods"	integer,
-	"group_name"	text,
-	"min_act_g"	real,
-	"notes"	text,
-	PRIMARY KEY("periods","group_name","regions")
-);
 CREATE TABLE "MinCapacity" (
 	"regions"	text,
 	"periods"	integer,
