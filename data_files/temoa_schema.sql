@@ -633,6 +633,15 @@ CREATE TABLE IF NOT EXISTS "MaxSeasonalActivity" (
 	FOREIGN KEY("season_name") REFERENCES "time_season"("t_season"),
 	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
 );
+CREATE TABLE IF NOT EXISTS "MaxAsynchronousShare" (
+	"regions"	text,
+	"periods"	integer,
+	"share"	real,
+  "source" text,
+	"notes"	text,
+	PRIMARY KEY("regions","periods"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods")
+);
 CREATE TABLE IF NOT EXISTS "RampUp" (
 	"regions"	text,
 	"tech"	text,
