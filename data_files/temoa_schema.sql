@@ -476,24 +476,24 @@ CREATE TABLE IF NOT EXISTS "MaxNewCapacity" (
 CREATE TABLE IF NOT EXISTS "MinNewCapacityGroup" (
 	"regions"	text,
 	"periods"	integer,
-	"tech"	text,
+	"group_name"	text,
 	"minnewcap"	real,
 	"minnewcap_units"	text,
 	"minnewcap_notes"	text,
-	PRIMARY KEY("regions","periods","tech"),
+	PRIMARY KEY("regions","periods","group_name"),
 	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
-	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
 );
 CREATE TABLE IF NOT EXISTS "MaxNewCapacityGroup" (
 	"regions"	text,
 	"periods"	integer,
-	"tech"	text,
+	"group_name"	text,
 	"maxnewcap"	real,
 	"maxnewcap_units"	text,
 	"maxnewcap_notes"	text,
-	PRIMARY KEY("regions","periods","tech"),
+	PRIMARY KEY("regions","periods","group_name"),
 	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
-	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
 );
 CREATE TABLE IF NOT EXISTS "MinActivityGroup" (
 	"regions"	text,
