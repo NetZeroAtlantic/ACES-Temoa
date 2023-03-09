@@ -36,5 +36,5 @@ dependencies:
     # cbc solver below cannot be installed via Conda on Windows
     - coincbc
     # Below required for dashboard
-    - dash
-
+    - dash=1.19.0
+    - werkzeug=2.0.3
