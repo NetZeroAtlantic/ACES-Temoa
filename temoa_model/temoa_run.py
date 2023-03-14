@@ -402,6 +402,10 @@ class TemoaSolverInstance(object):
                 else:
                     if self.options.solver == 'cbc':
                         sym_labels = False
+                        self.optimizer.options["crossover"]='off'
+                        self.optimizer.options["dualTolerance"]=1e-6
+                        self.optimizer.options["primalTolerance"]=1e-6
+                        self.optimizer.options["zeroTolerance"]=1e-12
                         # Note: The cbc solver encounters errors when variable names exceed
                         # 100 characters. To prevent this error from occuring, we do not
                         # send symbolic variable names to the solver.
