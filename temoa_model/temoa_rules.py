@@ -2362,7 +2362,7 @@ that no more than 10% of LDVs must be of a certain type.
     activity_group = activity_p + activity_p_annual
     max_activity_share = value(M.MaxActivityShare[r, p, t, g])
 
-    expr = activity_t <= min_activity_share* activity_group
+    expr = activity_t <= max_activity_share* activity_group
     return expr
 
 def MinNewCapacityShare_Constraint(M, r, p, t, g):
