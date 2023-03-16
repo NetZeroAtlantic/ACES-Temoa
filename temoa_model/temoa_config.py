@@ -163,6 +163,8 @@ def db_2_dat(ifile, ofile, options):
         ['param', 'MinSeasonalActivity',       '',                    '',             4],
         ['param', 'MinActivityGroup',          '',                    '',             3],
         ['param', 'MaxActivityGroup',          '',                    '',             3],
+        ['param', 'MinActivityShare',          '',                    '',             4],
+        ['param', 'MaxActivityShare',          '',                    '',             4],
         ['param', 'MinAnnualCapacityFactor',   '',                    '',             3],
         ['param', 'MaxAnnualCapacityFactor',   '',                    '',             3],
         ['param', 'MinCapacityGroup',          '',                    '',             3],

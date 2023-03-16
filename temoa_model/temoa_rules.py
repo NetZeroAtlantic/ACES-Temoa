@@ -2239,6 +2239,131 @@ that no more than 10% of LDVs must be of a certain type.
     expr = capacity_t <= max_cap_share * capacity_group
     return expr
 
+def MinActivityShare_Constraint(M, r, p, t, g):
+    r"""
+
+The MinActivityShare constraint sets a minimum capacity share for a given
+technology within a technology groups to which it belongs.
+
+For instance, you might define a tech_group of light-duty vehicles, whose
+members are different types for LDVs. This constraint could be used to enforce
+that no less than 10% of LDVs must be of a certain type.
+"""
+        # r can be an individual region (r='US'), or a combination of regions separated by comma (r='Mexico,US,Canada'), or 'all'.
+        # if r == 'all', the constraint is system-wide
+    if r == 'all':
+          reg = M.regions
+    else:
+          reg = [r]
+
+    try:
+            activity_rpt = sum(
+                M.V_FlowOut[r, p, s, d, S_i, t, S_v, S_o]
+                for r in reg if ',' not in r
+                for S_v in M.processVintages[r, p, t]
+                for S_i in M.processInputs[r, p, t, S_v]
+                for S_o in M.ProcessOutputsByInput[r, p, t, S_v, S_i]
+                for s in M.time_season
+                for d in M.time_of_day
+            )
+    except:
+            activity_rpt = sum(
+                M.V_FlowOutAnnual[r, p, S_i, t, S_v, S_o]
+                for r in reg if ',' not in r
+                for S_v in M.processVintages[r, p, t]
+                for S_i in M.processInputs[r, p, t, S_v]
+                for S_o in M.ProcessOutputsByInput[r, p, t, S_v, S_i]
+            )
+
+
+    activity_t = activity_rpt
+    activity_p = sum(
+        M.V_FlowOut[r, p, s, d, S_i, S_t, S_v, S_o]
+        for _r, _g, S_t in M.tech_groups if _r == r and _g == g and (r, p, S_t) in M.processVintages
+        for S_v in M.processVintages[r, p, S_t]
+        for S_i in M.processInputs[r, p, S_t, S_v]
+        for S_o in M.ProcessOutputsByInput[r, p, S_t, S_v, S_i]
+        for s in M.time_season
+        for d in M.time_of_day
+        if (S_t not in M.tech_annual) and ((r, p, S_t) in M.processVintages.keys())
+    )
+
+    activity_p_annual = sum(
+        M.V_FlowOutAnnual[r, p, S_i, S_t, S_v, S_o]
+        for _r, _g, S_t in M.tech_groups if _r == r and _g == g and (r, p, S_t) in M.processVintages
+        for S_v in M.processVintages[r, p, S_t]
+        for S_i in M.processInputs[r, p, S_t, S_v]
+        for S_o in M.ProcessOutputsByInput[r, p, S_t, S_v, S_i]
+        if (S_t in M.tech_annual) and ((r, p, S_t) in M.processVintages.keys())
+    )
+    activity_group = activity_p + activity_p_annual
+    min_activity_share = value(M.MinActivityShare[r, p, t, g])
+
+    expr = activity_t >= min_activity_share* activity_group
+    return expr
+
+
+def MaxActivityShare_Constraint(M, r, p, t, g):
+    r"""
+
+The MaxActivityShare constraint sets a maximum Activity share for a given
+technology within a technology groups to which it belongs.
+
+For instance, you might define a tech_group of light-duty vehicles, whose
+members are different types for LDVs. This constraint could be used to enforce
+that no more than 10% of LDVs must be of a certain type.
+"""
+
+    if r == 'all':
+          reg = M.regions
+    else:
+          reg = [r]
+
+    try:
+            activity_rpt = sum(
+                M.V_FlowOut[r, p, s, d, S_i, t, S_v, S_o]
+                for r in reg if ',' not in r
+                for S_v in M.processVintages[r, p, t]
+                for S_i in M.processInputs[r, p, t, S_v]
+                for S_o in M.ProcessOutputsByInput[r, p, t, S_v, S_i]
+                for s in M.time_season
+                for d in M.time_of_day
+            )
+    except:
+            activity_rpt = sum(
+                M.V_FlowOutAnnual[r, p, S_i, t, S_v, S_o]
+                for r in reg if ',' not in r
+                for S_v in M.processVintages[r, p, t]
+                for S_i in M.processInputs[r, p, t, S_v]
+                for S_o in M.ProcessOutputsByInput[r, p, t, S_v, S_i]
+            )
+
+
+    activity_t = activity_rpt
+    activity_p = sum(
+        M.V_FlowOut[r, p, s, d, S_i, S_t, S_v, S_o]
+        for _r, _g, S_t in M.tech_groups if _r == r and _g == g and (r, p, S_t) in M.processVintages
+        for S_v in M.processVintages[r, p, S_t]
+        for S_i in M.processInputs[r, p, S_t, S_v]
+        for S_o in M.ProcessOutputsByInput[r, p, S_t, S_v, S_i]
+        for s in M.time_season
+        for d in M.time_of_day
+        if (S_t not in M.tech_annual) and ((r, p, S_t) in M.processVintages.keys())
+    )
+
+    activity_p_annual = sum(
+        M.V_FlowOutAnnual[r, p, S_i, S_t, S_v, S_o]
+        for _r, _g, S_t in M.tech_groups if _r == r and _g == g and (r, p, S_t) in M.processVintages
+        for S_v in M.processVintages[r, p, S_t]
+        for S_i in M.processInputs[r, p, S_t, S_v]
+        for S_o in M.ProcessOutputsByInput[r, p, S_t, S_v, S_i]
+        if (S_t in M.tech_annual) and ((r, p, S_t) in M.processVintages.keys())
+    )
+    activity_group = activity_p + activity_p_annual
+    max_activity_share = value(M.MaxActivityShare[r, p, t, g])
+
+    expr = activity_t <= min_activity_share* activity_group
+    return expr
 
 def MinNewCapacityShare_Constraint(M, r, p, t, g):
     r"""
