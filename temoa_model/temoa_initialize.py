@@ -600,7 +600,7 @@ def CreateSparseDicts(M):
     for r, i, t, v, o in M.Efficiency.sparse_iterkeys():
         if "-" in r and t not in M.tech_exchange:
             raise Exception("Technology "+str(t)+" seems to be an exchange \
-				technology but it is not specified in tech_exchange set")
+                technology but it is not specified in tech_exchange set")
         l_process = (r, t, v)
         l_lifetime = value(M.LifetimeProcess[l_process])
         # Do some error checking for the user.
@@ -1176,15 +1176,34 @@ and "first_d" are the reference season and time-of-day, respectively used to
 ensure demand activity remains consistent across time slices.
 """
 
-    first_s = M.time_season.first()
-    first_d = M.time_of_day.first()
+    # Find the first timestep of the year where the demand is non-zero:
+    eps = 0.000001
+
     for r, p, t, v, dem in M.ProcessInputsByOutput.keys():
-        if dem in M.commodity_demand and t not in M.tech_annual:
-            if (r, p, first_s, first_d, dem) in M.DemandSpecificDistribution.sparse_keys():
-                for s in M.time_season:
-                    for d in M.time_of_day:
-                        if s != first_s or d != first_d:
-                            yield (r, p, s, d, t, v, dem, first_s, first_d)
+        # No need for constraint if dem is not a demand commodity or
+        # if t is in tech_annual.
+        if (dem not in M.commodity_demand) or (t in M.tech_annual):
+            continue
+
+        # Find the first time step where the DSD is not 0
+        # Set the time_season and time_of_day to s0 and d0.
+        for s0 in M.time_season:
+            for d0 in M.time_of_day:
+                if (r,p,s0,d0,dem) in M.DemandSpecificDistribution.sparse_keys():
+                    try:
+                        if value(M.DemandSpecificDistribution[r,p,s0,d0,dem]) > eps:
+                            break
+                    except:
+                        continue
+            else:
+                 continue
+            break
+
+        # Start yielding the constraint indices
+        for s in M.time_season:
+            for d in M.time_of_day:
+                if s != s0 or d != d0:
+                    yield (r,p,s,d,t,v,dem,s0,d0)
 
 
 
@@ -1334,7 +1353,7 @@ def RampConstraintPeriodIndices(M):
         (r, p, t, v)
 
         for r, p, t in M.rampVintages.keys()
-        for v in M.rampVintages[r, p, t]	)
+        for v in M.rampVintages[r, p, t]    )
 
     return indices
 
