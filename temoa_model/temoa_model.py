@@ -279,6 +279,8 @@ def temoa_create_model(name="Temoa"):
     M.MaxCapacityShare = Param(M.MinCapShare_rptg)
     M.MinNewCapacityShare = Param(M.MinCapShare_rptg)
     M.MaxNewCapacityShare = Param(M.MinCapShare_rptg)
+    M.MinActivityShare = Param(M.MinCapShare_rptg) # MinMaxActivityShare parameter has the same index as the MinCapacityShare
+    M.MaxActivityShare = Param(M.MinCapShare_rptg)
     M.MinAnnualCapacityFactor = Param(M.RegionalGlobalIndices, M.time_optimize, M.tech_all)
     M.MaxAnnualCapacityFactor = Param(M.RegionalGlobalIndices, M.time_optimize, M.tech_all)
     M.LinkedTechs = Param(M.RegionalIndices, M.tech_all, M.commodity_emissions)
@@ -539,6 +541,19 @@ def temoa_create_model(name="Temoa"):
     )
     M.MaxSeasonalActivityConstraint = Constraint(
         M.MaxSeasonalActivityConstraint_rpst, rule=MaxSeasonalActivity_Constraint
+    )
+    M.MinActivityShareConstraint_rptg = Set(
+        dimen=4, initialize=lambda M: M.MinActivityShare.sparse_iterkeys()
+    )
+    M.MinActivityShareConstraint = Constraint(
+        M.MinActivityShareConstraint_rptg, rule=MinActivityShare_Constraint
+    )
+
+    M.MaxActivityShareConstraint_rptg = Set(
+        dimen=4, initialize=lambda M: M.MaxActivityShare.sparse_iterkeys()
+    )
+    M.MaxActivityShareConstraint = Constraint(
+        M.MaxActivityShareConstraint_rptg, rule=MaxActivityShare_Constraint
     )
 
     M.MaxCapacityConstraint_rpt = Set(
