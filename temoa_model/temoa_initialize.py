@@ -1180,6 +1180,8 @@ ensure demand activity remains consistent across time slices.
     eps = 0.000001
 
     for r, p, t, v, dem in M.ProcessInputsByOutput.keys():
+        if (r, p, dem) not in M.Demand.sparse_iterkeys():
+            continue
         # No need for constraint if dem is not a demand commodity or
         # if t is in tech_annual.
         if (dem not in M.commodity_demand) or (t in M.tech_annual):
