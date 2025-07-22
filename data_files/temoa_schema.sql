@@ -969,5 +969,46 @@ CREATE TABLE IF NOT EXISTS "CapacityCredit" (
 	"cc_tech_notes"	text,
 	PRIMARY KEY("regions","periods","tech","vintage")
 );
+CREATE TABLE IF NOT EXISTS "MaxNewCapacityGroupShare" (
+	"regions"	text,
+	"periods"	integer,
+	"g_target"	text,
+	"g_reference" text,
+	"maxnewcapshare"	real CHECK("maxnewcapshare" >= 0 AND "maxnewcapshare" <= 1),
+	"maxnewcap_units"	text,
+	"maxnewcap_notes"	text,
+	FOREIGN KEY("g_target") REFERENCES "g_target"("group_name"),
+	FOREIGN KEY("g_reference") REFERENCES "g_reference"("group_name"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	PRIMARY KEY("regions","periods","g_target","g_reference" )
+);
+
+CREATE TABLE IF NOT EXISTS "MinNewCapacityGroupShare" (
+	"regions"	text,
+	"periods"	integer,
+	"g_target"	text,
+	"g_reference" text,
+	"minnewcapshare"	real CHECK("minnewcapshare" >= 0 AND "minnewcapshare" <= 1),
+	"minnewcap_units"	text,
+	"minnewcap_notes"	text,
+	FOREIGN KEY("g_target") REFERENCES "g_target"("group_name"),
+	FOREIGN KEY("g_reference") REFERENCES "g_reference"("group_name"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	PRIMARY KEY("regions","periods","g_target","g_reference" )
+);
+
+CREATE TABLE IF NOT EXISTS "g_reference" (
+	"group_name"	text,
+	"notes"	TEXT,
+	PRIMARY KEY("group_name"),
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+
+CREATE TABLE "g_target" (
+	"group_name"	text,
+	"notes"	TEXT,
+	PRIMARY KEY("group_name"),
+	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
 
 COMMIT;

@@ -82,6 +82,8 @@ def temoa_create_model(name="Temoa"):
     M.tech_flex = Set(within=M.tech_all)
     M.tech_exchange = Set(within=M.tech_all)
     M.groups = Set(dimen=1)  # Define groups for technologies
+    M.g_target = Set(within=M.groups)
+    M.g_reference = Set(within=M.groups)
     M.tech_annual = Set(within=M.tech_all)  # Define techs with constant output
 
     # Define technology groups
@@ -274,6 +276,8 @@ def temoa_create_model(name="Temoa"):
     M.MaxCapacityGroup = Param(M.RegionalIndices, M.time_optimize, M.groups)
     M.MinNewCapacityGroup = Param(M.RegionalIndices, M.time_optimize, M.groups)
     M.MaxNewCapacityGroup = Param(M.RegionalIndices, M.time_optimize, M.groups)
+    M.MaxNewCapacityGroupShare = Param(M.RegionalIndices, M.time_optimize, M.g_target, M.g_reference)
+    M.MinNewCapacityGroupShare = Param(M.RegionalIndices, M.time_optimize, M.g_target, M.g_reference)
     M.MinCapShare_rptg = Set(dimen=4, initialize=MinCapShareIndices)
     M.MinCapacityShare = Param(M.MinCapShare_rptg)
     M.MaxCapacityShare = Param(M.MinCapShare_rptg)
@@ -658,6 +662,20 @@ def temoa_create_model(name="Temoa"):
     )
     M.MinAnnualCapacityFactorConstraint = Constraint(
         M.MinAnnualCapacityFactorConstraint_rpt, rule=MinAnnualCapacityFactor_Constraint
+    )
+    
+    M.MaxNewCapacityGroupShareConstraint_rpgg = Set(
+            dimen=4, initialize=lambda M: M.MaxNewCapacityGroupShare.sparse_iterkeys()
+    )
+    M.MaxNewCapacityGroupShareConstraint = Constraint(
+        M.MaxNewCapacityGroupShareConstraint_rpgg, rule=MaxNewCapacityGroupShare_Constraint
+    )
+
+    M.MinNewCapacityGroupShareConstraint_rpgg = Set(
+            dimen=4, initialize=lambda M: M.MinNewCapacityGroupShare.sparse_iterkeys()
+    )
+    M.MinNewCapacityGroupShareConstraint = Constraint(
+        M.MinNewCapacityGroupShareConstraint_rpgg, rule=MinNewCapacityGroupShare_Constraint
     )
 
     M.MaxAnnualCapacityFactorConstraint_rpt = Set(

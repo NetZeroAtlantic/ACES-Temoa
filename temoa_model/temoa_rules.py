@@ -2410,7 +2410,83 @@ that no more than 10% of LDV purchases in a given year must be of a certain type
     expr = capacity_t <= max_cap_share * capacity_group
     return expr
 
+def MaxNewCapacityGroupShare_Constraint(M, r, p, g_target, g_reference):
+    r"""
+    Ensures that the total new capacity of a target technology group does not exceed a
+    specified percentage of another reference technology group's total new capacity.
 
+    Args:
+        M: Temoa model instance.
+        r: Region.
+        p: Period.
+        g_target: Target technology group.
+        g_reference: Reference technology group.
+
+    Example Use Case:
+    If g_target represents hydrogen-based power generation and g_reference
+    represents total renewable power generation, this constraint ensures that
+    hydrogen does not exceed, say, 30% of total renewable generation capacity.
+    """
+
+    # Sum of new capacities for the target group
+    capacity_target = sum(
+        M.V_Capacity[r, t, p]
+        for (_r, _g, t) in M.tech_groups.keys()
+        if _r == r and _g == g_target and (r, t, p) in M.V_Capacity.keys()
+    )
+
+    # Sum of new capacities for the reference group
+    capacity_reference = sum(
+        M.V_Capacity[r, t, p]
+        for (_r, _g, t) in M.tech_groups.keys()
+        if _r == r and _g == g_reference and (r, t, p) in M.V_Capacity.keys()
+    )
+
+    # Get the maximum allowed share from model parameters
+    max_group_share = value(M.MaxNewCapacityGroupShare[r, p, g_target, g_reference])
+
+    # Constraint: Ensure the target group's capacity does not exceed the share of the reference group
+    expr = capacity_target <= max_group_share * capacity_reference
+    return expr
+
+def MinNewCapacityGroupShare_Constraint(M, r, p, g_target, g_reference):
+    r"""
+    Ensures that the total new capacity of a target technology group should be at least
+    specified percentage of another reference technology group's total new capacity.
+
+    Args:
+        M: Temoa model instance.
+        r: Region.
+        p: Period.
+        g_target: Target technology group.
+        g_reference: Reference technology group.
+
+    Example Use Case:
+    If g_target represents hydrogen-based power generation and g_reference
+    represents total renewable power generation, this constraint ensures that
+    hydrogen does should meet al least, say, 30% of total renewable generation capacity.
+    """
+
+    # Sum of new capacities for the target group
+    capacity_target = sum(
+        M.V_Capacity[r, t, p]
+        for (_r, _g, t) in M.tech_groups.keys()
+        if _r == r and _g == g_target and (r, t, p) in M.V_Capacity.keys()
+    )
+
+    # Sum of new capacities for the reference group
+    capacity_reference = sum(
+        M.V_Capacity[r, t, p]
+        for (_r, _g, t) in M.tech_groups.keys()
+        if _r == r and _g == g_reference and (r, t, p) in M.V_Capacity.keys()
+    )
+
+    # Get the maximum allowed share from model parameters
+    min_group_share = value(M.MinNewCapacityGroupShare[r, p, g_target, g_reference])
+
+    # Constraint: Ensure the target group's capacity does not exceed the share of the reference group
+    expr = capacity_target >= min_group_share * capacity_reference
+    return expr
 
 
 def MaxNewCapacity_Constraint(M, r, p, t):
