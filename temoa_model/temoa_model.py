@@ -99,6 +99,7 @@ def temoa_create_model(name="Temoa"):
     # Define commodity-related sets
     M.commodity_demand = Set()
     M.commodity_emissions = Set()
+    M.commodity_demand_season = Set(within =M.commodity_demand )
     M.commodity_physical = Set()
     M.commodity_carrier = M.commodity_physical | M.commodity_demand
     M.commodity_all = M.commodity_carrier | M.commodity_emissions
@@ -287,6 +288,9 @@ def temoa_create_model(name="Temoa"):
     M.MaxActivityShare = Param(M.MinCapShare_rptg)
     M.MinAnnualCapacityFactor = Param(M.RegionalGlobalIndices, M.time_optimize, M.tech_all)
     M.MaxAnnualCapacityFactor = Param(M.RegionalGlobalIndices, M.time_optimize, M.tech_all)
+    M.MinSeasonalCapacityFactor = Param(M.RegionalGlobalIndices, M.time_optimize, M.tech_all, M.time_season)
+    M.MaxSeasonalCapacityFactor = Param(M.RegionalGlobalIndices, M.time_optimize, M.tech_all, M.time_season)
+
     M.LinkedTechs = Param(M.RegionalIndices, M.tech_all, M.commodity_emissions)
 
     # Define parameters associated with electric sector operation
@@ -683,6 +687,20 @@ def temoa_create_model(name="Temoa"):
     )
     M.MaxAnnualCapacityFactorConstraint = Constraint(
         M.MaxAnnualCapacityFactorConstraint_rpt, rule=MaxAnnualCapacityFactor_Constraint
+    )
+
+    M.MinSeasonalCapacityFactorConstraint_rpts = Set(
+        dimen=4, initialize=lambda M: M.MinSeasonalCapacityFactor.sparse_iterkeys()
+    )
+    M.MinSeasonalCapacityFactorConstraint = Constraint(
+        M.MinSeasonalCapacityFactorConstraint_rpts, rule=MinSeasonalCapacityFactor_Constraint
+    )
+
+    M.MaxSeasonalCapacityFactorConstraint_rpts = Set(
+        dimen=4, initialize=lambda M: M.MaxSeasonalCapacityFactor.sparse_iterkeys()
+    )
+    M.MaxSeasonalCapacityFactorConstraint = Constraint(
+        M.MaxSeasonalCapacityFactorConstraint_rpts, rule=MaxSeasonalCapacityFactor_Constraint
     )
 
 

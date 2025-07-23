@@ -1004,11 +1004,46 @@ CREATE TABLE IF NOT EXISTS "g_reference" (
 	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
 );
 
-CREATE TABLE "g_target" (
+CREATE TABLE IF NOT EXISTS "g_target" (
 	"group_name"	text,
 	"notes"	TEXT,
 	PRIMARY KEY("group_name"),
 	FOREIGN KEY("group_name") REFERENCES "groups"("group_name")
+);
+
+CREATE TABLE IF NOT EXISTS "commodity_demand_season" (
+	"demand_comm"	TEXT,
+	"notes"	TEXT,
+	PRIMARY KEY("demand_comm"),
+	FOREIGN KEY("demand_comm") REFERENCES "commodities"("comm_name")
+);
+
+CREATE TABLE IF NOT EXISTS "MinSeasonalCapacityFactor" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"season_name"	TEXT,
+	"min_scf"	real,
+	"source"	text,
+	"min_scf_notes"	text,
+	PRIMARY KEY("regions","periods","tech","season_name"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("season_name") REFERENCES "time_season"("t_season")
+); 
+
+CREATE TABLE IF NOT EXISTS "MaxSeasonalCapacityFactor" (
+	"regions"	text,
+	"periods"	integer,
+	"tech"	text,
+	"season_name"	TEXT,
+	"max_scf"	real,
+	"source"	text,
+	"max_scf_notes"	text,
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
+	FOREIGN KEY("season_name") REFERENCES "time_season"("t_season"),
+	PRIMARY KEY("regions","periods","tech","season_name")
 );
 
 COMMIT;

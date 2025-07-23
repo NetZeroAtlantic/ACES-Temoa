@@ -644,6 +644,8 @@ Note that this constraint is only applied to the demand commodities with diurnal
 variations, and therefore the equation above only includes :math:`\textbf{FO}`
 and not  :math:`\textbf{FOA}`
 """
+    if dem in M.commodity_demand_season:
+        return Constraint.Skip
 
     act_a = sum(
         M.V_FlowOut[r, p, s_0, d_0, S_i, t, v, dem]
@@ -2866,6 +2868,122 @@ def MaxAnnualCapacityFactor_Constraint(M, r, p, t):
         expr = activity_rpt <= max_annual_cf * max_possible_activity_rpt
         return expr
 
+def MinSeasonalCapacityFactor_Constraint(M, r, p, t, s):
+        r"""
+
+The MinSeasonalCapacityFactor constraint sets a lower bound on the total output
+activity from a given technology in a specific season (representative day), based on a minimum
+required seasonal capacity factor.
+
+This constraint only applies to technologies with time-slice resolution (i.e., not in `tech_annual`).
+If the technology is in `tech_annual`, the constraint is skipped.
+
+The seasonal activity is compared to the seasonal available capacity (adjusted by
+the segment fraction across all time-of-day segments) and converted using the
+capacity-to-activity ratio.
+
+.. math::
+   :label: MinSeasonalCapacityFactor
+
+   \sum_{d,i,v,o} \textbf{FO}_{r, p, s, d, i, t, v, o} \geq MINCF_{r, p, t, s} \times \left( \sum_{d} SegFrac_{s,d} \right) \times \textbf{CAPAVL}_{r, p, t} \times C2A_{r, t}
+
+   \forall \{r, p, t, s\} \notin T^{a}
+
+"""
+
+        # r can be an individual region (r='US'), or a combination of regions separated by comma (r='Mexico,US,Canada'), or 'all'.
+        # if r == 'all', the constraint is system-wide
+        if r == 'all':
+            reg = M.regions
+        else:
+            reg = [r]
+
+        try:
+            activity_rpt = sum(
+                M.V_FlowOut[r, p, s, d, S_i, t, S_v, S_o]
+                for r in reg if ',' not in r
+                for S_v in M.processVintages[r, p, t]
+                for S_i in M.processInputs[r, p, t, S_v]
+                for S_o in M.ProcessOutputsByInput[r, p, t, S_v, S_i]
+                for d in M.time_of_day
+            )
+        except:
+            msg = (
+            "\nWarning: MaxSeasonalCapacityFactor constraint can not be defined for "
+            "technologies in \"tech_annual\". Continuing by ignoring the constraint "
+            "for '%s'.\n "
+            )
+            SE.write(msg % (t))
+            return Constraint.Skip
+
+        max_possible_activity_rpts = (
+            sum(M.SegFrac[s, S_d] for S_d in M.time_of_day)
+             * M.V_CapacityAvailableByPeriodAndTech[r, p, t]
+             * M.CapacityToActivity[r, t]
+             )
+
+
+        min_seasonal_cf = value(M.MinSeasonalCapacityFactor[r, p, t, s])
+        expr = activity_rpt >= min_seasonal_cf * max_possible_activity_rpts
+        return expr
+
+
+def MaxSeasonalCapacityFactor_Constraint(M, r, p, t, s):
+        r"""
+    The MaxSeasonalCapacityFactor constraint sets an upper bound on the total output
+    activity from a given technology in a specific season (representative day), based on a maximum
+    allowed seasonal capacity factor.
+
+    This constraint only applies to technologies with time-slice resolution (i.e., not in `tech_annual`).
+    If the technology is in `tech_annual`, the constraint is skipped.
+
+    The seasonal activity is compared to the seasonal available capacity (adjusted by
+    the segment fraction across all time-of-day segments) and converted using the
+    capacity-to-activity ratio.
+
+    .. math::
+        :label: MaxSeasonalCapacityFactor
+
+        \sum_{d,i,v,o} \textbf{FO}_{r, p, s, d, i, t, v, o} \leq MAXCF_{r, p, t, s} \times \left( \sum_{d} SegFrac_{s,d} \right) \times \textbf{CAPAVL}_{r, p, t} \times C2A_{r, t}
+
+        \forall \{r, p, t, s\} \notin T^{a}
+
+        """
+        # r can be an individual region (r='US'), or a combination of regions separated by comma (r='Mexico,US,Canada'), or 'all'.
+        # if r == 'all', the constraint is system-wide
+        if r == 'all':
+          reg = M.regions
+        else:
+          reg = [r]
+
+        try:
+            activity_rpt = sum(
+                M.V_FlowOut[r, p, s, d, S_i, t, S_v, S_o]
+                for r in reg if ',' not in r
+                for S_v in M.processVintages[r, p, t]
+                for S_i in M.processInputs[r, p, t, S_v]
+                for S_o in M.ProcessOutputsByInput[r, p, t, S_v, S_i]
+                for d in M.time_of_day
+            )
+        except:
+            msg = (
+            "\nWarning: MaxSeasonalActivity constraint can not be defined for "
+            "technologies in \"tech_annual\". Continuing by ignoring the constraint "
+            "for '%s'.\n "
+            )
+            SE.write(msg % (t))
+            return Constraint.Skip
+
+        max_possible_activity_rpts = (
+            sum(M.SegFrac[s, S_d] for S_d in M.time_of_day)
+             * M.V_CapacityAvailableByPeriodAndTech[r, p, t]
+             * M.CapacityToActivity[r, t]
+             )
+
+
+        max_seasonal_cf = value(M.MaxSeasonalCapacityFactor[r, p, t, s])
+        expr = activity_rpt <= max_seasonal_cf * max_possible_activity_rpts
+        return expr
 
 
 def TechInputSplit_Constraint(M, r, p, s, d, i, t, v):
