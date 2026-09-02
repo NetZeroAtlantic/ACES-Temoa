@@ -403,18 +403,13 @@ class TemoaSolverInstance(object):
                     if self.options.solver == 'cbc':
                         sym_labels = False
                         self.optimizer.options["crossover"]='off'
-                        self.optimizer.options["dualTolerance"]=1e-6
-                        self.optimizer.options["primalTolerance"]=1e-6
-                        self.optimizer.options["zeroTolerance"]=1e-12
-                        # Note: The cbc solver encounters errors when variable names exceed
-                        # 100 characters. To prevent this error from occuring, we do not
-                        # send symbolic variable names to the solver.
+                        self.optimizer.options["dualTolerance"]=1e-3
+                        self.optimizer.options["primalTolerance"]=1e-3
+                        self.optimizer.options["zeroTolerance"]=1e-6
+                        self.optimizer.options["presolve"] = "on"
+                        self.optimizer.options["scaling"] = "on"
+                        self.optimizer.options["barrier"] = "on"
 
-                        # Solver options. Reference: https://genxproject.github.io/GenX/dev/solver_configuration/
-                        self.optimizer.options["dualTolerance"] = 1e-6
-                        self.optimizer.options["primalTolerance"] = 1e-6
-                        self.optimizer.options["zeroTolerance"] = 1e-12
-                        self.optimizer.options["crossover"] = 'off'
 
 
                     elif self.options.solver == 'cplex':
@@ -509,10 +504,15 @@ def get_solvers():
     logger.disabled = True  # no need for warnings: it's what we're testing!
 
     available_solvers = set()
-    try:
-        services = SF.services()  # pyutilib version <= 5.6.3
-    except RuntimeError as e:
-        services = SF  # pyutilib version >= 5.6.4
+    #try:
+        #services = SF.services()  # pyutilib version <= 5.6.3
+    #except RuntimeError as e:
+        #services = SF  # pyutilib version >= 5.6.4
+
+        try:
+            services = SF.services()
+        except Exception:
+            services = ["highs", "cplex", "gurobi", "cbc", "glpk"]
 
     for sname in services:
         # initial underscore ('_'): Pyomo's method to mark non-public plugins

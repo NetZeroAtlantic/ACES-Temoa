@@ -340,6 +340,15 @@ CREATE TABLE IF NOT EXISTS "tech_annual" (
 	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
 );
 
+CREATE TABLE IF NOT EXISTS "CERTech" (
+	"regions"	text,
+	"tech"	text,
+	"notes"	text,
+	PRIMARY KEY("regions","tech"),
+	FOREIGN KEY("regions") REFERENCES "regions"("regions"),
+	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+);
+
 
 CREATE TABLE IF NOT EXISTS "tech_mga" (
 	"tech"	text,
@@ -976,6 +985,17 @@ CREATE TABLE IF NOT EXISTS "MaxAnnualCapacityFactor" (
 	PRIMARY KEY("regions","periods","tech"),
 	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods"),
 	FOREIGN KEY("tech") REFERENCES "technologies"("tech")
+);
+
+CREATE TABLE IF NOT EXISTS "CERIntensity" (
+	"regions"	text,
+	"periods"	integer,
+	"cer_intensity"	real CHECK("cer_intensity" >= 0),
+	"cer_intensity_units"	text,
+	"cer_intensity_notes"	text,
+	PRIMARY KEY("regions","periods"),
+	FOREIGN KEY("regions") REFERENCES "regions"("regions"),
+	FOREIGN KEY("periods") REFERENCES "time_periods"("t_periods")
 );
 
 

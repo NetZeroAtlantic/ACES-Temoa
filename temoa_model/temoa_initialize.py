@@ -965,6 +965,100 @@ def EmissionActivityIndices(M):
 
     return indices
 
+
+def validate_CERIntensity(M, intensity, r, p):
+    """Reject negative CER limits with a model-data error that names the row."""
+    if intensity < 0:
+        raise ValueError(
+            "CERIntensity[{}, {}] is negative ({} t CO2/GWh); "
+            "CER intensities must be non-negative.".format(r, p, intensity)
+        )
+    return True
+
+
+def CERProcessIndices(M):
+    """Build sparse covered generator processes and their direct CER rates.
+
+    A covered generator process is an Efficiency row whose output is ELCG or
+    ELCG-RPS. Its fuel CO2 factor is taken from an upstream EmissionActivity
+    row in the same region with emis_comm=CO2 and output_comm equal to the
+    generator input commodity. A negative CO2 EmissionActivity attached to the
+    generator process is then added as its capture adjustment. Existing
+    emissions accounting is not changed.
+    """
+    electricity_outputs = set(("ELCG", "ELCG-RPS"))
+    efficiency_keys = tuple(M.Efficiency.sparse_iterkeys())
+    emission_keys = tuple(M.EmissionActivity.sparse_iterkeys())
+
+    upstream_factors = dict()
+    process_capture_adjustments = dict()
+    for er, e, ei, et, ev, eo in emission_keys:
+        if e != "CO2":
+            continue
+        factor = float(value(M.EmissionActivity[er, e, ei, et, ev, eo]))
+        upstream_factors.setdefault((er, eo), []).append(
+            (factor, (ei, et, ev, eo))
+        )
+        if factor < 0:
+            process_capture_adjustments[er, ei, et, ev, eo] = factor
+
+    rates = dict()
+    for r, t in M.CERTech:
+        generator_keys = [
+            (er, i, et, v, o)
+            for er, i, et, v, o in efficiency_keys
+            if er == r and et == t and o in electricity_outputs
+            and float(value(M.Efficiency[er, i, et, v, o])) > 0
+        ]
+        if not generator_keys:
+            available_outputs = sorted(set(
+                o for er, i, et, v, o in efficiency_keys
+                if er == r and et == t
+            ))
+            raise ValueError(
+                "CERTech[{}, {}] has no usable electricity-generating "
+                "Efficiency entry. Expected a positive-efficiency row with "
+                "output_comm ELCG or ELCG-RPS; found outputs: {}.".format(
+                    r, t, available_outputs or "none"
+                )
+            )
+
+        for key in generator_keys:
+            er, fuel, et, v, o = key
+            matches = upstream_factors.get((r, fuel), [])
+            if not matches:
+                raise ValueError(
+                    "CERTech[{}, {}] fuel '{}' (Efficiency vintage {}, output "
+                    "'{}') cannot be mapped to an upstream CO2 "
+                    "EmissionActivity factor. Add a same-region row with "
+                    "emis_comm='CO2' and output_comm='{}'.".format(
+                        r, t, fuel, v, o, fuel
+                    )
+                )
+
+            distinct_factors = sorted(set(factor for factor, source in matches))
+            if len(distinct_factors) != 1:
+                raise ValueError(
+                    "CERTech[{}, {}] fuel '{}' maps to multiple upstream CO2 "
+                    "EmissionActivity factors: {} kt/PJ. The CER fuel mapping "
+                    "must resolve to one factor.".format(
+                        r, t, fuel, distinct_factors
+                    )
+                )
+
+            efficiency = float(value(M.Efficiency[key]))
+            gross_rate = distinct_factors[0] / efficiency
+            capture_adjustment = process_capture_adjustments.get(key, 0.0)
+            rates[key] = gross_rate + capture_adjustment
+
+    M._CEREmissionRates = rates
+    return set(rates)
+
+
+def ParamCEREmissionRate(M, r, i, t, v, o):
+    """Return the calculated net CER rate in kt CO2/PJ electricity."""
+    return M._CEREmissionRates[r, i, t, v, o]
+
 def OutputBasedStandardIndices(M):
     indices = set(
         (r, p, e, i, t, o)

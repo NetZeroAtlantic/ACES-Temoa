@@ -86,6 +86,10 @@ def temoa_create_model(name="Temoa"):
     M.g_reference = Set(within=M.groups)
     M.tech_annual = Set(within=M.tech_all)  # Define techs with constant output
 
+    # Electricity-generating technologies covered by the Clean Electricity
+    # Regulations (CER), specified sparsely by region and technology.
+    M.CERTech = Set(dimen=2, within=M.regions * M.tech_all)
+
     # Define technology groups
     M.tech_groups = Set(within=M.RegionalIndices * M.groups * M.tech_all)
 
@@ -271,6 +275,13 @@ def temoa_create_model(name="Temoa"):
     M.EmissionLimit = Param(M.RegionalGlobalIndices, M.SectorGlobalIndices, M.time_optimize, M.commodity_emissions)
     M.EmissionActivity_reitvo = Set(dimen=6, initialize=EmissionActivityIndices)
     M.EmissionActivity = Param(M.EmissionActivity_reitvo)
+    M.CERIntensity = Param(
+        M.regions, M.time_optimize, validate=validate_CERIntensity
+    )
+    M.CERProcess_ritvo = Set(dimen=5, initialize=CERProcessIndices)
+    M.CEREmissionRate = Param(
+        M.CERProcess_ritvo, initialize=ParamCEREmissionRate
+    )
     M.MinActivityGroup = Param(M.RegionalIndices, M.time_optimize, M.groups)
     M.MaxActivityGroup = Param(M.RegionalIndices, M.time_optimize, M.groups)
     M.MinCapacityGroup = Param(M.RegionalIndices, M.time_optimize, M.groups)
@@ -687,6 +698,13 @@ def temoa_create_model(name="Temoa"):
     )
     M.MaxAnnualCapacityFactorConstraint = Constraint(
         M.MaxAnnualCapacityFactorConstraint_rpt, rule=MaxAnnualCapacityFactor_Constraint
+    )
+
+    M.CERConstraint_rp = Set(
+        dimen=2, initialize=lambda M: M.CERIntensity.sparse_iterkeys()
+    )
+    M.CERConstraint = Constraint(
+        M.CERConstraint_rp, rule=CER_Constraint
     )
 
     M.MinSeasonalCapacityFactorConstraint_rpts = Set(

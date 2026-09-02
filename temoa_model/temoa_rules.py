@@ -2868,6 +2868,48 @@ def MaxAnnualCapacityFactor_Constraint(M, r, p, t):
         expr = activity_rpt <= max_annual_cf * max_possible_activity_rpt
         return expr
 
+
+def CER_Constraint(M, r, p):
+    r"""Apply the annual pooled regional Clean Electricity Regulations limit.
+
+    Generator output is in PJ and the net ``CEREmissionRate`` (including any
+    negative generator-level CO2 capture adjustment) is in kt CO2/PJ, so the
+    left-hand side is kt CO2/year. On the right, 1 GW-year is 8.76 thousand
+    GWh; multiplying t CO2/GWh by 8.76 and GW therefore also yields kt CO2/year.
+    """
+    covered_techs = set(t for cr, t in M.CERTech if cr == r)
+
+    emissions = 0
+    for cr, i, t, v, o in M.CERProcess_ritvo:
+        if cr != r or t not in covered_techs:
+            continue
+        rate = value(M.CEREmissionRate[cr, i, t, v, o])
+        if t in M.tech_annual:
+            flow_index = (r, p, i, t, v, o)
+            if flow_index in M.FlowVarAnnual_rpitvo:
+                emissions += M.V_FlowOutAnnual[flow_index] * rate
+        else:
+            for s in M.time_season:
+                for d in M.time_of_day:
+                    flow_index = (r, p, s, d, i, t, v, o)
+                    if flow_index in M.FlowVar_rpsditvo:
+                        emissions += M.V_FlowOut[flow_index] * rate
+
+    covered_capacity = sum(
+        M.V_CapacityAvailableByPeriodAndTech[r, p, t]
+        for t in covered_techs
+        if (r, p, t) in M.CapacityAvailableVar_rpt
+    )
+
+    # No active covered vintage in this period makes the policy row 0 <= 0.
+    if not any(
+        (r, p, t) in M.CapacityAvailableVar_rpt for t in covered_techs
+    ):
+        return Constraint.Skip
+
+    allowance = value(M.CERIntensity[r, p]) * 8.76 * covered_capacity
+    return emissions <= allowance
+
 def MinSeasonalCapacityFactor_Constraint(M, r, p, t, s):
         r"""
 
